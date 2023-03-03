@@ -3,6 +3,7 @@ use super::activity::{
     home::{*},
     interface::{*},
     setting::{*},
+    splash::{*},
     transfer::{*},
 };
 
@@ -18,6 +19,7 @@ pub struct WalletApp {
     value: f32,
 
     page: Page,
+    splash_activity: SplashActivity,
 }
 
 impl Default for WalletApp {
@@ -26,7 +28,8 @@ impl Default for WalletApp {
             // Example stuff:
             label: "Hello World!".to_owned(),
             value: 2.7,
-            page: Page::Home,
+            page: Page::Splash,
+            splash_activity: SplashActivity::new(),
         }
     }
 }
@@ -34,6 +37,7 @@ impl Default for WalletApp {
 
 #[derive(serde::Deserialize, serde::Serialize)]
 enum Page {
+    Splash,
     Home,
     Settings,
     Transfer,
@@ -62,22 +66,27 @@ impl WalletApp {
 
         // Load previous app state (if any).
         // Note that you must enable the `persistence` feature for this to work.
-        if let Some(storage) = cc.storage {
-            return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
-        }
+        // if let Some(storage) = cc.storage {
+        //     return eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+        // }
         Default::default()
     }
 
     pub fn update_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.common_page(ctx, _frame);
         match self.page {
+            Page::Splash => {
+                self.splash_page(ctx, _frame);
+            }
             Page::Home => {
+                self.common_page(ctx, _frame);
                 self.home_page(ctx, _frame)
             }
             Page::Settings => {
+                self.common_page(ctx, _frame);
                 self.settings_page(ctx, _frame)
             }
             Page::Transfer => {
+                self.common_page(ctx, _frame);
                 self.transfer_page(ctx, _frame)
             }
         }
@@ -95,6 +104,16 @@ impl WalletApp {
 
     fn settings_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         SettingActivity::on_create(ctx, _frame);
+    }
+
+
+    fn splash_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.splash_activity.on_create(ctx, _frame);
+        let (input, submit) = self.splash_activity.get_res();
+        if submit {
+            println!("{:?}", input);
+            self.page = Page::Home;
+        }
     }
 
 
