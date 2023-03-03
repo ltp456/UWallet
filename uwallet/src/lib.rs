@@ -2,4 +2,6 @@
 
 mod app;
 
+mod activity;
+
 pub use app::WalletApp;
