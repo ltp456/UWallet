@@ -6,3 +6,4 @@ pub mod transfer;
 pub mod setting;
 pub mod widget;
 pub mod splash;
+pub mod welcome;

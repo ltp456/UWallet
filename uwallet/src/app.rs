@@ -5,6 +5,7 @@ use super::activity::{
     setting::{*},
     splash::{*},
     transfer::{*},
+    welcome::{*},
 };
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -20,6 +21,8 @@ pub struct WalletApp {
 
     page: Page,
     splash_activity: SplashActivity,
+    welcome_activity: WelcomeActivity,
+    state: State,
 }
 
 impl Default for WalletApp {
@@ -30,6 +33,22 @@ impl Default for WalletApp {
             value: 2.7,
             page: Page::Splash,
             splash_activity: SplashActivity::new(),
+            welcome_activity: WelcomeActivity::new(),
+            state: State::default(),
+        }
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize, Default)]
+struct State {
+    phrase: String,
+
+}
+
+impl State {
+    pub fn new() -> Self {
+        State {
+            phrase: "".to_string()
         }
     }
 }
@@ -38,6 +57,7 @@ impl Default for WalletApp {
 #[derive(serde::Deserialize, serde::Serialize)]
 enum Page {
     Splash,
+    Welcome,
     Home,
     Settings,
     Transfer,
@@ -77,6 +97,9 @@ impl WalletApp {
             Page::Splash => {
                 self.splash_page(ctx, _frame);
             }
+            Page::Welcome => {
+                self.welcome_page(ctx, _frame);
+            }
             Page::Home => {
                 self.common_page(ctx, _frame);
                 self.home_page(ctx, _frame)
@@ -106,13 +129,21 @@ impl WalletApp {
         SettingActivity::on_create(ctx, _frame);
     }
 
+    fn welcome_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.welcome_activity.on_create(ctx, _frame);
+        let (confirm, input) = self.welcome_activity.get_status();
+        if confirm {
+            self.page = Page::Home;
+            self.state.phrase = input;
+        }
+    }
+
 
     fn splash_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.splash_activity.on_create(ctx, _frame);
         let (input, submit) = self.splash_activity.get_res();
-        if submit {
-            println!("{:?}", input);
-            self.page = Page::Home;
+        if submit && input == "abcd" {
+            self.page = Page::Welcome;
         }
     }
 

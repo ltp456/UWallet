@@ -8,7 +8,7 @@ pub struct SplashActivity {
 impl SplashActivity {
     pub fn new() -> Self {
         SplashActivity {
-            input: Default::default(),
+            input: "abcd".to_string(),
             submit: false,
         }
     }
