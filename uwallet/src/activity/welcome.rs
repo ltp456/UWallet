@@ -1,5 +1,5 @@
 
-use ext::keys::{*, Key};
+use polkadot::keys::{*, Key};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct WelcomeActivity {

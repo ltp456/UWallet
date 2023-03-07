@@ -1,6 +1,6 @@
-mod client;
+pub mod client;
 mod storage;
-mod types;
+pub mod types;
 
 
 

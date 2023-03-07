@@ -1393,26 +1393,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
-name = "ext"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "hex",
- "pallet-balances",
- "pallet-staking",
- "parity-scale-codec",
- "polkadot-runtime",
- "reqwest",
- "serde",
- "serde_json",
- "sp-core",
- "sp-runtime",
- "sp-std",
- "tiny-bip39 1.0.0",
- "uuid",
-]
-
-[[package]]
 name = "fake-simd"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3779,6 +3759,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "polkadot"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "hex",
+ "pallet-balances",
+ "pallet-staking",
+ "parity-scale-codec",
+ "polkadot-runtime",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "tiny-bip39 1.0.0",
+ "uuid",
+]
+
+[[package]]
 name = "polkadot-core-primitives"
 version = "0.9.29"
 source = "git+https://github.com/paritytech/polkadot.git?rev=94078b44#94078b44fb6c9767bf60ffcaaa3be40681be5a76"
@@ -4697,6 +4697,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "900fba806f70c630b0a382d0d825e17a0f19fcd059a2ade1ff237bcddf446b31"
 dependencies = [
  "lazy_static",
+]
+
+[[package]]
+name = "signal-hook-registry"
+version = "1.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8229b473baa5980ac72ef434c4415e70c4b5e71b423043adb4ba059f89c99a1"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -5688,9 +5697,23 @@ dependencies = [
  "memchr",
  "mio",
  "num_cpus",
+ "parking_lot",
  "pin-project-lite",
+ "signal-hook-registry",
  "socket2",
+ "tokio-macros",
  "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d266c00fde287f55d3f1c3e96c500c362a2b8c695076ec180f27918820bc6df8"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -6004,9 +6027,10 @@ dependencies = [
  "console_error_panic_hook",
  "eframe",
  "egui",
- "ext",
+ "polkadot",
  "serde",
  "tiny-bip39 1.0.0",
+ "tokio",
  "tracing-subscriber 0.3.16",
  "tracing-wasm",
  "wasm-bindgen-futures",

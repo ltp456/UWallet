@@ -8,16 +8,29 @@ pub enum Chain {
     Ethereum,
     Polkadot,
 }
+
 #[derive(serde::Deserialize, serde::Serialize)]
-pub struct TransferActivity {}
+pub struct TransferActivity {
+    amount: String,
+    dest: String,
+    balance: String,
+    submitted: bool,
+}
 
 impl TransferActivity {
-    pub fn on_create(ctx: &Context, _frame: &eframe::Frame) {
-        let mut radio = Chain::Ethereum;
-        let mut input = String::new();
-        egui::CentralPanel::default().show(ctx, |ui| {
+    pub fn new() -> Self {
+        TransferActivity {
+            amount: "".to_string(),
+            dest: "".to_string(),
+            balance: Default::default(),
+            submitted: false,
+        }
+    }
 
-            ui.vertical_centered(|ui|{
+    pub fn on_create(&mut self, ctx: &Context, _frame: &eframe::Frame) {
+        let mut radio = Chain::Ethereum;
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.vertical_centered(|ui| {
                 ui.heading("Transfer");
             });
             ui.separator();
@@ -33,25 +46,30 @@ impl TransferActivity {
 
             ui.horizontal(|ui| {
                 ui.label("Balance: ");
-                ui.label("100000 DOT")
+                ui.label(&self.balance)
             });
 
             ui.horizontal(|ui| {
                 ui.label("Amount: ");
-                ui.add(egui::TextEdit::singleline(&mut input).hint_text("input transfer amount value"));
+                ui.add(egui::TextEdit::singleline(&mut self.amount).hint_text("input transfer amount value"));
             });
 
             ui.horizontal(|ui| {
                 ui.label("Dest      :");
-                ui.add(egui::TextEdit::singleline(&mut input).hint_text("input transfer dest address"))
+                ui.add(egui::TextEdit::singleline(&mut self.dest).hint_text("input transfer dest address"))
             });
             ui.separator();
 
+            self.submitted = false;
             ui.vertical_centered(|ui| {
                 if ui.button("Submit").clicked() {
-
+                    self.submitted = true
                 }
             })
         });
+    }
+
+    pub fn get_info(&self)->(String,String,bool){
+        (self.amount.clone(),self.dest.clone(),self.submitted)
     }
 }

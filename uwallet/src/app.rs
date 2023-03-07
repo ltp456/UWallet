@@ -1,3 +1,11 @@
+use std::collections::BTreeMap;
+use std::sync::{Arc, Mutex};
+
+use polkadot::{keys::{*}, rpc::{*}};
+use polkadot::rpc::client::Client;
+
+use crate::executor::Executor;
+
 use super::activity::{
     common::{*},
     home::{*},
@@ -8,37 +16,44 @@ use super::activity::{
     welcome::{*},
 };
 
-use ext::keys::{*};
+
+
+
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct WalletApp {
-    // Example stuff:
-    label: String,
 
-    // this how you opt-out of serialization of a member
-    #[serde(skip)]
-    value: f32,
 
-    page: Page,
-    splash_activity: SplashActivity,
-    welcome_activity: WelcomeActivity,
-    home_activity: HomeActivity,
     state: State,
+    #[serde(skip)]
+    page: Page,
+    #[serde(skip)]
+    splash_activity: SplashActivity,
+    #[serde(skip)]
+    welcome_activity: WelcomeActivity,
+    #[serde(skip)]
+    home_activity: Arc<Mutex<HomeActivity>>,
+    #[serde(skip)]
+    transfer_activity: Arc<Mutex<TransferActivity>>,
+    #[serde(skip)]
+    client: Arc<Client>,
+    #[serde(skip)]
+    executor: Executor,
 }
 
 impl Default for WalletApp {
     fn default() -> Self {
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
             page: Page::Splash,
             splash_activity: SplashActivity::new(),
             welcome_activity: WelcomeActivity::new(),
-            home_activity: HomeActivity::new(),
+            home_activity: Arc::new(Mutex::new(HomeActivity::new())),
+            transfer_activity: Arc::new(Mutex::new(TransferActivity::new())),
             state: State::default(),
+            client: Arc::new(Client::new("https://rpc.polkadot.io".to_string())),
+            executor: Executor::new(),
         }
     }
 }
@@ -48,6 +63,7 @@ struct State {
     phrase: String,
 
 }
+
 
 impl State {
     pub fn new() -> Self {
@@ -121,13 +137,23 @@ impl WalletApp {
 
     fn home_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let address = Key::address_from_phrase(&self.state.phrase, None);
-        self.home_activity.set(address);
-        self.home_activity.on_create(ctx, _frame);
+        let tmp = self.home_activity.clone();
+        let client = self.client.clone();
+        self.executor.spawn(async move {
+            let account_info = client.system_account("16mBaA4BPtJzxLchgbHkimRamd4PjnEpELn2N1TS86Hv3NJ7".to_string()).unwrap();
+            tmp.lock().unwrap().set(address, format!("{}", account_info.data.free));
+            println!("{}", "dadsdf");
+        });
+        self.home_activity.lock().unwrap().on_create(ctx, _frame)
     }
 
 
     fn transfer_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        TransferActivity::on_create(ctx, _frame);
+        self.transfer_activity.lock().unwrap().on_create(ctx, _frame);
+        let (amount, dest, submitted) = self.transfer_activity.lock().unwrap().get_info();
+        if submitted {
+            println!("{} {}", amount, dest);
+        }
     }
 
 

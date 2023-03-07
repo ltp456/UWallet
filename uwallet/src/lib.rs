@@ -2,5 +2,7 @@
 
 mod app;
 mod activity;
+mod executor;
 
 pub use app::WalletApp;
+

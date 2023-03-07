@@ -1,11 +1,13 @@
 use anyhow::Result;
+use codec::{Decode, Encode};
 use serde::{Deserialize, Serialize};
 use sp_core::crypto::{Ss58AddressFormat, Ss58Codec};
 use sp_core::ed25519;
 use uuid::Uuid;
-use codec::{Decode,Encode};
-use super::types::{*};
+
 use super::storage::{*};
+use super::types::{*};
+
 pub struct Client {
     endpoint: String,
     client: reqwest::blocking::Client,
@@ -21,45 +23,59 @@ impl Client {
         }
     }
 
-    pub fn system_account(&self, addr: String) -> Result<AccountInfo> {
-        let public = ed25519::Public::from_ss58check(&addr).unwrap();
-        let storage_map = StorageMap::new("System", "Account", StorageHasher::Blake2_128Concat);
+    pub fn storage_map_key(&self, module_prefix: &str, storage_prefix: &str, addr: &str) -> Result<String> {
+        let public = ed25519::Public::from_ss58check(addr).unwrap();
+        let storage_map = StorageMap::new(module_prefix, storage_prefix, StorageHasher::Blake2_128Concat);
         let storage_key = storage_map.key(public);
         let key = hex::encode(storage_key.0);
-        let mut  params = Vec::<String>::new();
+        Ok(key)
+    }
+
+
+    pub fn system_account(&self, addr: String) -> Result<AccountInfo> {
+        let key = self.storage_map_key("System", "Account", &addr).unwrap();
+        let mut params = Vec::<String>::new();
         params.push(key);
-        let res: String = self.post::<Vec<String>>("state_getStorage".to_string(), params)?;
-        let result: JsonRpcResp<String> = serde_json::from_str(&res)?;
-        let storage = hex::decode(result.result.strip_prefix("0x").unwrap()).unwrap();
-        let account:AccountInfo = Decode::decode(&mut storage.as_slice()).unwrap();
+        let account = self.post::<Vec<String>, AccountInfo>("state_getStorage".to_string(), params)?;
         Ok(account)
     }
 
 
     pub fn finalize_head(&self) -> Result<String> {
-        let res: String = self.post::<Vec<String>>("chain_getFinalizedHead".to_string(), Vec::new())?;
-        let result: JsonRpcResp<String> = serde_json::from_str(&res)?;
-        Ok(result.result)
+        let result: String = self.request_no_type::<Vec<String>>("chain_getFinalizedHead".to_string(), Vec::new())?;
+        Ok(result)
     }
 
-    pub fn post<T: Serialize>(&self, method: String, params: T) -> Result<String> {
-        let rpc_req: JsonRpcReq<T> = JsonRpcReq::new(method, params);
-        let body = serde_json::to_string(&rpc_req)?;
+    pub fn request_no_type<T: Serialize>(&self,method:String, params: T) -> Result<String> {
+        let req: JsonRpcReq<T> = JsonRpcReq::new(method, params);
+        let body = serde_json::to_string(&req)?;
         let res = self.client.post(&self.endpoint)
             .header("Content-Type", "application/json")
             .body(body)
             .send()?.text()?;
-        Ok(res)
+        let response: JsonRpcResp<String> = serde_json::from_str(&res)?;
+        Ok(response.result)
+    }
+
+
+    pub fn post<T: Serialize, R: Decode>(&self, method: String, params: T) -> Result<R> {
+        let req: JsonRpcReq<T> = JsonRpcReq::new(method, params);
+        let body = serde_json::to_string(&req)?;
+        let res = self.client.post(&self.endpoint)
+            .header("Content-Type", "application/json")
+            .body(body)
+            .send()?.text()?;
+        let response: JsonRpcResp<String> = serde_json::from_str(&res)?;
+        let storage = hex::decode(response.result.strip_prefix("0x").unwrap()).unwrap();
+        let result: R = Decode::decode(&mut storage.as_slice()).unwrap();
+        Ok(result)
     }
 }
 
 
-
-
-
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 struct JsonRpcReq<T> {
-    id: i64,
+    id: u64,
     #[serde(rename = "jsonrpc")]
     json_rpc: String,
     method: String,
@@ -71,7 +87,7 @@ impl<T> JsonRpcReq<T> {
     fn new(method: String, params: T) -> Self {
         let id = Uuid::new_v4();
         JsonRpcReq {
-            id: id.to_u128_le() as i64,
+            id: id.to_u128_le() as u64,
             json_rpc: "2.0".to_string(),
             method,
             params,
@@ -82,7 +98,7 @@ impl<T> JsonRpcReq<T> {
 
 #[derive(serde::Deserialize, serde::Serialize, Debug)]
 struct JsonRpcResp<T> {
-    id: i64,
+    id: u64,
     #[serde(rename = "jsonrpc")]
     json_rpc: String,
     result: T,
@@ -95,15 +111,12 @@ mod test {
 
     use super::*;
 
-
-
     #[test]
-    fn test_account(){
+    fn test_account() {
         let client = Client::new("https://rpc.polkadot.io".to_string());
         let metadata = client.system_account("16mBaA4BPtJzxLchgbHkimRamd4PjnEpELn2N1TS86Hv3NJ7".to_string()).unwrap();
         println!("{:?}", metadata.data.free);
     }
-
 
 
     #[test]
