@@ -19,6 +19,7 @@ pub mod extrinsic;
 pub mod compose;
 pub mod extrinsic_params;
 pub mod keys;
+mod rpc;
 
 
 pub fn signed_extrinsic(hash: String, seed: String, to: String, amount: String, nonce: String, spec_version: String, transaction_version: String, network_id: String, module_index: String, call_index: String) -> Result<String> {

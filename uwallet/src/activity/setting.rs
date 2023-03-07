@@ -1,7 +1,7 @@
 use std::process;
 use eframe::emath::Align;
 use egui::Direction;
-
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct SettingActivity {}
 
 

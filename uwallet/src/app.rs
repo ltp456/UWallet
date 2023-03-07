@@ -8,6 +8,8 @@ use super::activity::{
     welcome::{*},
 };
 
+use ext::keys::{*};
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
@@ -22,6 +24,7 @@ pub struct WalletApp {
     page: Page,
     splash_activity: SplashActivity,
     welcome_activity: WelcomeActivity,
+    home_activity: HomeActivity,
     state: State,
 }
 
@@ -34,6 +37,7 @@ impl Default for WalletApp {
             page: Page::Splash,
             splash_activity: SplashActivity::new(),
             welcome_activity: WelcomeActivity::new(),
+            home_activity: HomeActivity::new(),
             state: State::default(),
         }
     }
@@ -116,7 +120,9 @@ impl WalletApp {
     }
 
     fn home_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        HomeActivity::on_create(ctx, _frame);
+        let address = Key::address_from_phrase(&self.state.phrase, None);
+        self.home_activity.set(address);
+        self.home_activity.on_create(ctx, _frame);
     }
 
 

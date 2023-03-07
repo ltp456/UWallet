@@ -8,7 +8,7 @@ pub enum Chain {
     Ethereum,
     Polkadot,
 }
-
+#[derive(serde::Deserialize, serde::Serialize)]
 pub struct TransferActivity {}
 
 impl TransferActivity {

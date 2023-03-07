@@ -24,11 +24,18 @@ impl Key {
         seed_hex
     }
 
+    pub fn address_from_phrase(phrase:&str,password:Option<&str>)->String{
+        let seed = Key::generate_seed(phrase, password);
+        let address = Key::address(&seed, 0);
+        address
+    }
+
+
     pub fn address(seed: &str, network_id: u16) -> String {
         let result = hex::decode(seed).unwrap();
         let pair: ed25519::Pair = ed25519::Pair::from_seed_slice(&result).unwrap();
-        let public_key = pair.public().into_account().to_ss58check_with_version(Ss58AddressFormat::custom(network_id));
-        public_key
+        let address = pair.public().into_account().to_ss58check_with_version(Ss58AddressFormat::custom(network_id));
+        address
     }
 
     pub fn sign(phrase :&str,msg:&str,password:Option<&str>)->String{

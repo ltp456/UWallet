@@ -10,9 +10,9 @@ edition = "2021"
 codec = { package = 'parity-scale-codec', version = "3.1.5", default-features = false, features = ['derive'] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 
-sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch="polkadot-v0.9.29", features = ["full_crypto"] }
-sp-std = { version = "4.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch="polkadot-v0.9.29", package = "sp-std" }
-sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch="polkadot-v0.9.29", package = "sp-runtime" }
+sp-core = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29", features = ["full_crypto"] }
+sp-std = { version = "4.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29", package = "sp-std" }
+sp-runtime = { version = "6.0.0", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29", package = "sp-runtime" }
 pallet-staking = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29", package = "pallet-staking" }
 pallet-balances = { version = "4.0.0-dev", default-features = false, git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.29", package = "pallet-balances" }
 mainnet-runtime = { version = "0.9.29", default-features = false, git = "https://github.com/paritytech/polkadot.git", rev = "94078b44", package = "polkadot-runtime" }
@@ -21,6 +21,11 @@ anyhow = "1.0.53"
 serde = "1.0.130"
 serde_json = "1.0.68"
 tiny-bip39 = "1.0.0"
+
+#
+reqwest = { version = "0.11", features = ["blocking"] }
+uuid = { version = "1.3.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
+
 
 [features]
 default = ["std"]
