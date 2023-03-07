@@ -4,39 +4,58 @@ use std::sync::{Arc, Mutex};
 use polkadot::{keys::{*}, rpc::{*}};
 use polkadot::rpc::client::Client;
 
+
 use crate::executor::Executor;
 
 use super::activity::{
     common::{*},
     home::{*},
-    interface::{*},
     setting::{*},
     splash::{*},
     transfer::{*},
     welcome::{*},
 };
 
+#[derive(serde::Deserialize, Clone, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+pub enum Page {
+    Splash,
+    Welcome,
+    Home,
+    Settings,
+    Transfer,
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+pub struct State {
+    pub phrase: String,
+    pub current_page: Page,
+}
+
+impl State {
+    pub fn new() -> Self {
+        State {
+            phrase: "".to_string(),
+            current_page: Page::Splash,
+        }
+    }
+}
 
 
+pub trait IActivity {
+    fn on_create(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame);
+}
 
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct WalletApp {
+    #[serde(skip)]
+    activities: BTreeMap<Page, Arc<Mutex<dyn IActivity>>>,
 
+    #[serde(skip)]
+    state: Arc<Mutex<State>>,
 
-    state: State,
-    #[serde(skip)]
-    page: Page,
-    #[serde(skip)]
-    splash_activity: SplashActivity,
-    #[serde(skip)]
-    welcome_activity: WelcomeActivity,
-    #[serde(skip)]
-    home_activity: Arc<Mutex<HomeActivity>>,
-    #[serde(skip)]
-    transfer_activity: Arc<Mutex<TransferActivity>>,
     #[serde(skip)]
     client: Arc<Client>,
     #[serde(skip)]
@@ -45,42 +64,22 @@ pub struct WalletApp {
 
 impl Default for WalletApp {
     fn default() -> Self {
+        let state = Arc::new(Mutex::new(State::new()));
+        let client = Arc::new(Client::new("https://rpc.polkadot.io".to_string()));
+
+        let mut activities: BTreeMap<Page, Arc<Mutex<dyn IActivity>>> = BTreeMap::new();
+        activities.insert(Page::Splash, Arc::new(Mutex::new(SplashActivity::new(state.clone()))));
+        activities.insert(Page::Welcome, Arc::new(Mutex::new(WelcomeActivity::new(state.clone()))));
+        activities.insert(Page::Home, Arc::new(Mutex::new(HomeActivity::new())));
+        activities.insert(Page::Transfer, Arc::new(Mutex::new(TransferActivity::new(client.clone(), state.clone()))));
+        activities.insert(Page::Settings, Arc::new(Mutex::new(SettingActivity::new())));
         Self {
-            page: Page::Splash,
-            splash_activity: SplashActivity::new(),
-            welcome_activity: WelcomeActivity::new(),
-            home_activity: Arc::new(Mutex::new(HomeActivity::new())),
-            transfer_activity: Arc::new(Mutex::new(TransferActivity::new())),
-            state: State::default(),
-            client: Arc::new(Client::new("https://rpc.polkadot.io".to_string())),
+            activities,
+            state,
+            client,
             executor: Executor::new(),
         }
     }
-}
-
-#[derive(serde::Deserialize, serde::Serialize, Default)]
-struct State {
-    phrase: String,
-
-}
-
-
-impl State {
-    pub fn new() -> Self {
-        State {
-            phrase: "".to_string()
-        }
-    }
-}
-
-
-#[derive(serde::Deserialize, serde::Serialize)]
-enum Page {
-    Splash,
-    Welcome,
-    Home,
-    Settings,
-    Transfer,
 }
 
 
@@ -113,87 +112,46 @@ impl WalletApp {
     }
 
     pub fn update_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        match self.page {
+        println!("update  view ");
+        let page = self.state.lock().unwrap().current_page.clone();
+        match page {
             Page::Splash => {
-                self.splash_page(ctx, _frame);
+                self.activities.get(&Page::Splash).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
             Page::Welcome => {
-                self.welcome_page(ctx, _frame);
+                self.activities.get(&Page::Welcome).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
-            Page::Home => {
+            Page::Home=>{
                 self.common_page(ctx, _frame);
-                self.home_page(ctx, _frame)
-            }
-            Page::Settings => {
-                self.common_page(ctx, _frame);
-                self.settings_page(ctx, _frame)
+                self.activities.get(&Page::Home).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
             Page::Transfer => {
                 self.common_page(ctx, _frame);
-                self.transfer_page(ctx, _frame)
+                self.activities.get(&Page::Transfer).unwrap().lock().unwrap().on_create(ctx, _frame);
+            }
+            Page::Settings=>{
+                self.common_page(ctx, _frame);
+                self.activities.get(&Page::Settings).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
         }
     }
 
-    fn home_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let address = Key::address_from_phrase(&self.state.phrase, None);
-        let tmp = self.home_activity.clone();
-        let client = self.client.clone();
-        self.executor.spawn(async move {
-            let account_info = client.system_account("16mBaA4BPtJzxLchgbHkimRamd4PjnEpELn2N1TS86Hv3NJ7".to_string()).unwrap();
-            tmp.lock().unwrap().set(address, format!("{}", account_info.data.free));
-            println!("{}", "dadsdf");
-        });
-        self.home_activity.lock().unwrap().on_create(ctx, _frame)
-    }
 
 
-    fn transfer_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.transfer_activity.lock().unwrap().on_create(ctx, _frame);
-        let (amount, dest, submitted) = self.transfer_activity.lock().unwrap().get_info();
-        if submitted {
-            println!("{} {}", amount, dest);
-        }
-    }
-
-
-    fn settings_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        SettingActivity::on_create(ctx, _frame);
-    }
-
-    fn welcome_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.welcome_activity.on_create(ctx, _frame);
-        let (confirm, input) = self.welcome_activity.get_status();
-        if confirm {
-            self.page = Page::Home;
-            self.state.phrase = input;
-        }
-    }
-
-
-    fn splash_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        self.splash_activity.on_create(ctx, _frame);
-        let (input, submit) = self.splash_activity.get_res();
-        if submit && input == "abcd" {
-            self.page = Page::Welcome;
-        }
-    }
-
-
-    fn common_page(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn common_page(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::SidePanel::left("side_panel").show(ctx, |ui| {
             ui.heading("Menu");
             ui.separator();
             if ui.button("Home").clicked() {
-                self.page = Page::Home
+                self.state.lock().unwrap().current_page = Page::Home
             }
             ui.separator();
             if ui.button("Transfer").clicked() {
-                self.page = Page::Transfer
+                self.state.lock().unwrap().current_page = Page::Transfer
             }
             ui.separator();
             if ui.button("Settings").clicked() {
-                self.page = Page::Settings
+                self.state.lock().unwrap().current_page = Page::Settings
             }
             ui.separator();
         });

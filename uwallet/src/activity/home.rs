@@ -1,4 +1,6 @@
-use super::{interface::{*}};
+use egui::Context;
+
+use super::super::app::{IActivity};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct HomeActivity {
@@ -19,7 +21,10 @@ impl HomeActivity {
         self.balance = balance;
     }
 
-    pub fn on_create(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+}
+
+impl IActivity for HomeActivity {
+    fn on_create(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.heading("Home");
@@ -39,3 +44,5 @@ impl HomeActivity {
         });
     }
 }
+
+

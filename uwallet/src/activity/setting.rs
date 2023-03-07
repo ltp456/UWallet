@@ -1,6 +1,8 @@
 use std::process;
 use eframe::emath::Align;
-use egui::Direction;
+use egui::{Context, Direction};
+use crate::app::IActivity;
+
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct SettingActivity {}
 
@@ -10,7 +12,10 @@ impl SettingActivity {
         SettingActivity {}
     }
 
-    pub fn on_create(ctx: &egui::Context, _frame: &eframe::Frame) {
+}
+
+impl IActivity for SettingActivity{
+    fn on_create(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
                 ui.heading("Settings");

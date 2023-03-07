@@ -1,7 +1,14 @@
+use std::sync::{Arc, Mutex};
+
+use anyhow::Result;
 use eframe::Frame;
 use egui::Context;
 
+use polkadot::{rpc::{*}};
+use polkadot::rpc::client::Client;
+
 use super::{widget::{*}};
+use super::super::app::{IActivity,State};
 
 #[derive(PartialEq)]
 pub enum Chain {
@@ -9,17 +16,21 @@ pub enum Chain {
     Polkadot,
 }
 
-#[derive(serde::Deserialize, serde::Serialize)]
+
 pub struct TransferActivity {
     amount: String,
     dest: String,
     balance: String,
     submitted: bool,
+    client: Arc<Client>,
+    state:Arc<Mutex<State>>
 }
 
 impl TransferActivity {
-    pub fn new() -> Self {
+    pub fn new(client: Arc<Client>,state:Arc<Mutex<State>>) -> Self {
         TransferActivity {
+            client,
+            state,
             amount: "".to_string(),
             dest: "".to_string(),
             balance: Default::default(),
@@ -27,7 +38,15 @@ impl TransferActivity {
         }
     }
 
-    pub fn on_create(&mut self, ctx: &Context, _frame: &eframe::Frame) {
+    pub fn transfer(&self) -> Result<String> {
+        println!("submitted: {} {}", self.amount, self.dest);
+        Ok("".to_string())
+    }
+}
+
+
+impl IActivity for TransferActivity {
+    fn on_create(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         let mut radio = Chain::Ethereum;
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
@@ -60,16 +79,13 @@ impl TransferActivity {
             });
             ui.separator();
 
-            self.submitted = false;
+
             ui.vertical_centered(|ui| {
                 if ui.button("Submit").clicked() {
-                    self.submitted = true
+
                 }
             })
-        });
-    }
 
-    pub fn get_info(&self)->(String,String,bool){
-        (self.amount.clone(),self.dest.clone(),self.submitted)
+        });
     }
 }
