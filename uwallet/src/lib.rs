@@ -3,6 +3,7 @@
 mod app;
 mod activity;
 mod executor;
+mod navigate;
 
 pub use app::WalletApp;
 

@@ -23,6 +23,8 @@ anyhow = "1.0.53"
 tiny-bip39 = "1.0.0"
 polkadot = { path = "../chain/polkadot" }
 tokio = { version = "1.26.0", features = ["full"] }
+log = "0.4.17"
+env_logger = "0.10.0"
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

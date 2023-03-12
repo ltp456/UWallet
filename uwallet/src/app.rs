@@ -1,9 +1,13 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
+use log::{error, info};
+use tokio::sync::mpsc;
+use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::error::TryRecvError;
+
 use polkadot::{keys::{*}, rpc::{*}};
 use polkadot::rpc::client::Client;
-
 
 use crate::executor::Executor;
 
@@ -35,7 +39,7 @@ impl State {
     pub fn new() -> Self {
         State {
             phrase: "".to_string(),
-            current_page: Page::Splash,
+            current_page: Page::Home,
         }
     }
 }
@@ -60,24 +64,36 @@ pub struct WalletApp {
     client: Arc<Client>,
     #[serde(skip)]
     executor: Executor,
+    #[serde(skip)]
+    home_activity: HomeActivity,
+
+    #[serde(skip)]
+    receiver: Receiver<String>,
+    #[serde(skip)]
+    sender: Sender<String>,
 }
 
 impl Default for WalletApp {
     fn default() -> Self {
         let state = Arc::new(Mutex::new(State::new()));
         let client = Arc::new(Client::new("https://rpc.polkadot.io".to_string()));
-
+        let (sender, receiver): (Sender<String>, Receiver<String>) = mpsc::channel(2);
         let mut activities: BTreeMap<Page, Arc<Mutex<dyn IActivity>>> = BTreeMap::new();
         activities.insert(Page::Splash, Arc::new(Mutex::new(SplashActivity::new(state.clone()))));
         activities.insert(Page::Welcome, Arc::new(Mutex::new(WelcomeActivity::new(state.clone()))));
-        activities.insert(Page::Home, Arc::new(Mutex::new(HomeActivity::new())));
+        //activities.insert(Page::Home, Arc::new(Mutex::new(HomeActivity::new(client.clone(), state.clone()))));
         activities.insert(Page::Transfer, Arc::new(Mutex::new(TransferActivity::new(client.clone(), state.clone()))));
         activities.insert(Page::Settings, Arc::new(Mutex::new(SettingActivity::new())));
+
+
         Self {
             activities,
-            state,
-            client,
+            state: state.clone(),
+            client: client.clone(),
+            home_activity: HomeActivity::new(client.clone(), state.clone()),
             executor: Executor::new(),
+            receiver,
+            sender,
         }
     }
 }
@@ -112,7 +128,7 @@ impl WalletApp {
     }
 
     pub fn update_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        println!("update  view ");
+       info!("update view");
         let page = self.state.lock().unwrap().current_page.clone();
         match page {
             Page::Splash => {
@@ -121,21 +137,22 @@ impl WalletApp {
             Page::Welcome => {
                 self.activities.get(&Page::Welcome).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
-            Page::Home=>{
+            Page::Home => {
                 self.common_page(ctx, _frame);
-                self.activities.get(&Page::Home).unwrap().lock().unwrap().on_create(ctx, _frame);
+                self.home_activity.on_create(ctx, _frame);
+                self.home_activity.update((*ctx).clone());
             }
+
             Page::Transfer => {
                 self.common_page(ctx, _frame);
                 self.activities.get(&Page::Transfer).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
-            Page::Settings=>{
+            Page::Settings => {
                 self.common_page(ctx, _frame);
                 self.activities.get(&Page::Settings).unwrap().lock().unwrap().on_create(ctx, _frame);
             }
         }
     }
-
 
 
     fn common_page(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {

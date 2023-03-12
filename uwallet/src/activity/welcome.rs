@@ -1,7 +1,10 @@
 use std::sync::{Arc, Mutex};
+
 use egui::Context;
+
 use polkadot::keys::{*, Key};
-use super::super::app::{IActivity,Page,State};
+
+use super::super::app::{IActivity, Page, State};
 
 #[derive(serde::Deserialize, serde::Serialize)]
 pub struct WelcomeActivity {
@@ -12,7 +15,7 @@ pub struct WelcomeActivity {
 }
 
 impl WelcomeActivity {
-    pub fn new(state: Arc<Mutex<State>>,) -> Self {
+    pub fn new(state: Arc<Mutex<State>>) -> Self {
         WelcomeActivity {
             state,
             complete: false,
@@ -20,7 +23,6 @@ impl WelcomeActivity {
             phrase: Default::default(),
         }
     }
-
 }
 
 
@@ -36,6 +38,7 @@ impl IActivity for WelcomeActivity {
             ui.add_space(3 as f32);
             if ui.button("generate mnemonic").clicked() && !self.complete {
                 self.phrase = Key::generate_phrase(MnemonicType::Words12);
+                println!("{}",self.phrase);
                 self.complete = true;
             }
             if self.complete {
@@ -43,7 +46,8 @@ impl IActivity for WelcomeActivity {
             }
 
             if ui.button("Confirm").clicked() {
-               self.state.lock().unwrap().current_page = Page::Home;
+                self.state.lock().unwrap().phrase = "home early view mesh leave comic atom message amused fresh citizen runway".to_string();
+                self.state.lock().unwrap().current_page = Page::Home;
             }
         });
     }
