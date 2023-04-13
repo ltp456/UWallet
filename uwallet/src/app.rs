@@ -6,25 +6,26 @@ use anyhow::Result;
 use log::{debug, error, info};
 use parking_lot::Mutex;
 
-use crate::{AppState, IActivity};
+use coreui::{executor::Executor, lifecycle::Lifecycle, state::AppState};
+use coreui::lifecycle::{ActName, StackManager};
+
 use crate::activity::home::HomeActivity;
 use crate::activity::password::PasswordActivity;
 use crate::activity::phrase::PhraseActivity;
 use crate::activity::setting::SettingActivity;
 use crate::activity::transfer::TransferActivity;
 use crate::activity::welcome::WelcomeActivity;
-use crate::executor::Executor;
-use crate::navigation::{ActivityKey, InnerNavigation, Navigation};
+use crate::IActivity;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 //#[derive(serde::Deserialize, serde::Serialize)]
 //#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct WalletApp {
-    activities: HashMap<ActivityKey, Box<dyn IActivity>>,
-    navigation: InnerNavigation,
+    activities: HashMap<ActName, Box<dyn IActivity>>,
+    lifecycle_manager: StackManager,
     executor: Arc<Executor>,
-    promise: Receiver<ActivityKey>,
-    navigate_sender: Sender<ActivityKey>,
+    promise: Receiver<ActName>,
+    navigate_sender: Sender<ActName>,
     app_state: AppState,
 }
 
@@ -39,7 +40,7 @@ impl eframe::App for WalletApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         debug!("app shutdown now");
-        eframe::set_value(storage, eframe::APP_KEY, &self.app_state);
+        eframe::set_value(storage, eframe::APP_KEY, &self.app_state.0);
     }
 }
 
@@ -49,15 +50,15 @@ impl WalletApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         //https://rpc.polkadot.io
         let client = Arc::new(polkadot::client::Client::new(String::from("http://127.0.0.1:9933")));
-        let (sender, receiver) = std::sync::mpsc::channel::<ActivityKey>();
+        let (sender, receiver) = std::sync::mpsc::channel::<ActName>();
         let executor = Arc::new(Executor::new());
         let mut app_state = AppState::new();
         if let Some(storage) = cc.storage {
-            app_state = eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default();
+            app_state = AppState(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
         }
         let mut app = Self {
             activities: HashMap::new(),
-            navigation: InnerNavigation::new(),
+            lifecycle_manager: StackManager::new(),
             executor: executor.clone(),
             promise: receiver,
             navigate_sender: sender.clone(),
@@ -65,53 +66,50 @@ impl WalletApp {
         };
 
 
-        app.boot_activity(ActivityKey::new("welcome"), WelcomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
+        app.boot_activity(&ActName::new("welcome"), WelcomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
         //app.boot_activity(ActivityKey::new("home"), HomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
-        app.register(ActivityKey::new("password"), PasswordActivity::new(cc.egui_ctx.clone(), sender.clone()));
-        app.register(ActivityKey::new("phrase"), PhraseActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
-        app.register(ActivityKey::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
-        app.register(ActivityKey::new("setting"), SettingActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
-        app.register(ActivityKey::new("home"), HomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(),client.clone()));
+        app.register(&ActName::new("password"), PasswordActivity::new(cc.egui_ctx.clone(), sender.clone()));
+        app.register(&ActName::new("phrase"), PhraseActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
+        app.register(&ActName::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
+        app.register(&ActName::new("setting"), SettingActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
+        app.register(&ActName::new("home"), HomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
         app
     }
 
-    pub fn register(&mut self, activity_key: ActivityKey, activity: impl IActivity + 'static) {
-        self.navigation.register(activity_key.clone()).unwrap();
-        self.activities.insert(activity_key, Box::new(activity));
+    pub fn register(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
+        self.lifecycle_manager.register(activity_key).unwrap();
+        self.activities.insert(activity_key.clone(), Box::new(activity));
     }
 
-    pub fn boot_activity(&mut self, activity_key: ActivityKey, activity: impl IActivity + 'static) {
-        self.navigation.init_activity(activity_key.clone()).unwrap();
-        self.activities.insert(activity_key, Box::new(activity));
+    pub fn boot_activity(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
+        self.lifecycle_manager.boot_act(activity_key).unwrap();
+        self.activities.insert(activity_key.clone(), Box::new(activity));
     }
 
     pub fn update_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        let mut current_activity_key = self.navigation.get_current_activity().unwrap();
-        let current_activity = self.activities.get_mut(&current_activity_key).unwrap();
+        let (current, prev) = self.lifecycle_manager.current();
+        let current_activity = self.activities.get_mut(&current).unwrap();
         current_activity.set_view(ctx, _frame, &self.app_state);
-        //todo
-        let lifecycle = self.navigation.get_lifecycle(&current_activity_key);
+
+        let lifecycle = self.lifecycle_manager.lifecycle(&current).unwrap();
         if lifecycle.on_create {
             current_activity.on_create(&self.app_state);
-            lifecycle.on_create = false;
         }
         if lifecycle.on_resume {
-            lifecycle.on_resume = false;
             current_activity.on_resume(&self.app_state);
         }
 
-        if let Some(prev_activity) = self.navigation.get_prev_activity() {
-            let prev_lifecycle = self.navigation.get_lifecycle(&prev_activity);
+        if let Some(prev_activity) = prev {
+            let prev_lifecycle = self.lifecycle_manager.lifecycle(&prev_activity).unwrap();
             let prev_activity = self.activities.get_mut(&prev_activity).unwrap();
             if prev_lifecycle.on_pause {
-                prev_lifecycle.on_pause = false;
                 prev_activity.on_pause(&self.app_state);
             }
         }
-
+        self.lifecycle_manager.reset_lifecycle();
         if let Ok(result) = self.promise.try_recv() {
             debug!("update activity to {}",result);
-            self.navigation.navigate(result);
+            self.lifecycle_manager.start_act(result).unwrap();
             ctx.request_repaint();
         }
     }

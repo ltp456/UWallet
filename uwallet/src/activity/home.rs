@@ -8,22 +8,22 @@ use codec::{Decode, Encode};
 use egui::Ui;
 use log::{debug, error};
 use tokio::time;
+use coreui::executor::Executor;
+use coreui::lifecycle::ActName;
+use coreui::state::AppState;
 
 use polkadot::client::Client;
 use polkadot::rpc::{*};
 use polkadot::rpc::types::AccountInfo;
 
-use crate::executor::Executor;
-use crate::navigation::ActivityKey;
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
-
 use super::super::{IActivity, IView};
-use super::super::AppState;
+
 
 pub struct HomeActivity {
     ctx: egui::Context,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     executor: Arc<Executor>,
     balance: String,
     nonce: String,
@@ -37,7 +37,7 @@ pub struct HomeActivity {
 }
 
 impl HomeActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>, executor: Arc<Executor>, client: Arc<Client>) -> HomeActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>, client: Arc<Client>) -> HomeActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
             ctx: ctx.clone(),
@@ -54,7 +54,7 @@ impl HomeActivity {
         }
     }
 
-    pub fn navigate(&mut self, key: ActivityKey) {
+    pub fn navigate(&mut self, key: ActName) {
         self.navigate.send(key).unwrap();
         self.ctx.request_repaint();
     }
@@ -102,11 +102,11 @@ impl IActivity for HomeActivity {
         // left menu
         let (home, transfer, setting) = common::left_menu(ctx);
         if home {
-            self.navigate(ActivityKey::new("home"));
+            self.navigate(ActName::new("home"));
         } else if transfer {
-            self.navigate(ActivityKey::new("transfer"));
+            self.navigate(ActName::new("transfer"));
         } else if setting {
-            self.navigate(ActivityKey::new("setting"));
+            self.navigate(ActName::new("setting"));
         }
         //
 

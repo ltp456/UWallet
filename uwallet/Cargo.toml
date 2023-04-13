@@ -15,6 +15,7 @@ eframe = { version = "0.21.0", default-features = false, features = [
     "persistence", # Enable restoring app state when restarting the app.
 ] }
 
+egui-modal = "0.2.2"
 # You only need serde if you want app persistence:
 serde = { version = "1", features = ["derive"] }
 
@@ -23,6 +24,8 @@ anyhow = "1.0.53"
 tiny-bip39 = "1.0.0"
 polkadot = { path = "../create/polkadot" }
 utils = { path = "../create/utils" }
+coreui = { path = "../create/coreui" }
+
 tokio = { version = "1.26.0", features = ["full"] }
 poll-promise = { version = "0.2.0" }
 log = "0.4.17"

@@ -6,8 +6,9 @@ use std::time::Duration;
 use egui::Ui;
 use log::debug;
 use tokio::time;
+use coreui::executor::Executor;
 
-use crate::executor::Executor;
+
 use crate::IView;
 
 use super::*;

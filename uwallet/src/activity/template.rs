@@ -6,24 +6,26 @@ use anyhow::Result;
 use egui::Ui;
 use log::debug;
 use tokio::time;
+use coreui::executor::Executor;
+use coreui::lifecycle::ActName;
+use coreui::state::AppState;
 
-use crate::executor::Executor;
-use crate::navigation::ActivityKey;
+
 use crate::view::{common, state};
 
 use super::super::{IActivity, IView};
-use super::super::AppState;
+
 
 
 pub struct TemplateActivity {
     ctx: egui::Context,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     executor: Arc<Executor>,
     phrase: String,
 }
 
 impl TemplateActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>, executor: Arc<Executor>) -> TemplateActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> TemplateActivity {
         Self {
             ctx,
             navigate,
@@ -34,7 +36,7 @@ impl TemplateActivity {
     pub fn generate_phrase(&mut self) {}
 
     pub fn confirm_phrase(&mut self) {
-        self.navigate.send(ActivityKey::new("phrase")).unwrap();
+        self.navigate.send(ActName::new("phrase")).unwrap();
         self.ctx.request_repaint();
     }
 }

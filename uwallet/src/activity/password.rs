@@ -3,9 +3,10 @@ use std::sync::mpsc::Sender;
 use anyhow::{anyhow, Result};
 use egui::Ui;
 use log::debug;
+use coreui::lifecycle::ActName;
+use coreui::state::AppState;
 
-use crate::{AppState, view};
-use crate::navigation::ActivityKey;
+use crate::{view};
 
 use super::super::{IActivity, IView};
 use super::super::view::{*};
@@ -13,14 +14,14 @@ use super::super::view::{*};
 pub struct PasswordActivity {
     password: String,
     confirm_pwd: String,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     pwd_error: bool,
     new_password: bool,
     ctx: egui::Context,
 }
 
 impl PasswordActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>) -> PasswordActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>) -> PasswordActivity {
         Self {
             ctx,
             navigate,
@@ -50,10 +51,10 @@ impl PasswordActivity {
 
     fn navigate_phrase(&self, state: &AppState) {
         if state.exists("PHRASE") {
-           // self.navigate.send(ActivityKey::new("home")).unwrap();
-            self.navigate.send(ActivityKey::new("phrase")).unwrap();
+            self.navigate.send(ActName::new("home")).unwrap();
+            //self.navigate.send(ActivityKey::new("phrase")).unwrap();
         } else {
-            self.navigate.send(ActivityKey::new("phrase")).unwrap();
+            self.navigate.send(ActName::new("phrase")).unwrap();
         }
         self.ctx.request_repaint();
     }

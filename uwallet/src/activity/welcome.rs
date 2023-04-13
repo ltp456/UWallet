@@ -6,21 +6,20 @@ use anyhow::Result;
 use egui::Ui;
 use log::debug;
 use tokio::time;
+use coreui::executor::Executor;
+use coreui::lifecycle::ActName;
+use coreui::state::AppState;
 
-use crate::executor::Executor;
-use crate::navigation::ActivityKey;
-
-use super::super::{IActivity, IView};
-use super::super::AppState;
+use crate::{IActivity, IView};
 
 pub struct WelcomeActivity {
     ctx: egui::Context,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     executor: Arc<Executor>,
 }
 
 impl WelcomeActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>, executor: Arc<Executor>) -> WelcomeActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> WelcomeActivity {
         Self {
             ctx,
             navigate,
@@ -37,7 +36,7 @@ impl IActivity for WelcomeActivity {
         self.executor.spawn(async move {
             time::sleep(Duration::from_millis(2500)).await;
             debug!("navigate to password");
-            navigate.send(ActivityKey::new("password")).unwrap();
+            navigate.send(ActName::new("password")).unwrap();
             ctx.request_repaint();
         });
     }

@@ -7,18 +7,18 @@ use bip39::{Language, Mnemonic, MnemonicType};
 use egui::Ui;
 use log::debug;
 use tokio::time;
+use coreui::executor::Executor;
+use coreui::lifecycle::ActName;
+use coreui::state::AppState;
 
-use crate::executor::Executor;
-use crate::navigation::ActivityKey;
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, ViewStatus};
 
 use super::super::{IActivity, IView};
-use super::super::AppState;
 
 pub struct SettingActivity {
     ctx: egui::Context,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     executor: Arc<Executor>,
     balance: String,
     endpoint: String,
@@ -31,7 +31,7 @@ pub struct SettingActivity {
 }
 
 impl SettingActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>, executor: Arc<Executor>) -> SettingActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> SettingActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
             ctx: ctx.clone(),
@@ -47,7 +47,7 @@ impl SettingActivity {
         }
     }
 
-    pub fn navigate(&mut self, key: ActivityKey) {
+    pub fn navigate(&mut self, key: ActName) {
         self.navigate.send(key).unwrap();
         self.ctx.request_repaint();
     }
@@ -70,11 +70,11 @@ impl IActivity for SettingActivity {
     fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState) {
         let (home, transfer, setting) = common::left_menu(ctx);
         if home {
-            self.navigate(ActivityKey::new("home"));
+            self.navigate(ActName::new("home"));
         } else if transfer {
-            self.navigate(ActivityKey::new("transfer"));
+            self.navigate(ActName::new("transfer"));
         } else if setting {
-            self.navigate(ActivityKey::new("setting"));
+            self.navigate(ActName::new("setting"));
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Ok(mut data) = self.status_receiver.try_recv() {

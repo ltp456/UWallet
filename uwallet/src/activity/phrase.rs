@@ -7,9 +7,9 @@ use bip39::{Language, Mnemonic, MnemonicType};
 use egui::Ui;
 use log::debug;
 use tokio::time;
+use coreui::executor::Executor;
+use coreui::lifecycle::ActName;
 
-use crate::executor::Executor;
-use crate::navigation::ActivityKey;
 use crate::view::{common, state};
 
 use super::super::{IActivity, IView};
@@ -17,14 +17,14 @@ use super::super::AppState;
 
 pub struct PhraseActivity {
     ctx: egui::Context,
-    navigate: Sender<ActivityKey>,
+    navigate: Sender<ActName>,
     executor: Arc<Executor>,
     phrase: String,
     import_ui: bool,
 }
 
 impl PhraseActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActivityKey>, executor: Arc<Executor>) -> PhraseActivity {
+    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> PhraseActivity {
         Self {
             ctx,
             navigate,
@@ -44,7 +44,7 @@ impl PhraseActivity {
             return;
         }
         state.set_value("PHRASE".to_owned(), self.phrase.clone());
-        self.navigate.send(ActivityKey::new("home")).unwrap();
+        self.navigate.send(ActName::new("home")).unwrap();
         self.ctx.request_repaint();
     }
 }
