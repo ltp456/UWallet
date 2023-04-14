@@ -18,7 +18,7 @@ use polkadot::rpc::types::AccountInfo;
 
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
-use super::super::{IActivity, IView};
+use coreui::{IActivity, IView};
 
 
 pub struct HomeActivity {

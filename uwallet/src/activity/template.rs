@@ -13,7 +13,7 @@ use coreui::state::AppState;
 
 use crate::view::{common, state};
 
-use super::super::{IActivity, IView};
+use coreui::{IActivity, IView};
 
 pub struct TemplateActivity<'a> {
     ctx: egui::Context,

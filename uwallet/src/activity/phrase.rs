@@ -12,7 +12,7 @@ use coreui::lifecycle::ActName;
 
 use crate::view::{common, state};
 
-use super::super::{IActivity, IView};
+use coreui::{IActivity, IView};
 use super::super::AppState;
 
 pub struct PhraseActivity {

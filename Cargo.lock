@@ -929,6 +929,11 @@ name = "coreui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "eframe",
+ "egui",
+ "egui-modal",
+ "log",
+ "once_cell",
  "serde",
  "tokio",
 ]

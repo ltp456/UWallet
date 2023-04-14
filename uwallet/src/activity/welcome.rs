@@ -13,7 +13,7 @@ use coreui::{
     state::AppState,
 };
 
-use crate::{IActivity, IView};
+use coreui::{IActivity, IView};
 
 pub struct WelcomeActivity {
     navigate: Sender<ActName>,

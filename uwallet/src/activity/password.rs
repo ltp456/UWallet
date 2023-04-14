@@ -8,7 +8,7 @@ use coreui::state::AppState;
 
 use crate::{view};
 
-use super::super::{IActivity, IView};
+use coreui::{IActivity, IView};
 use super::super::view::{*};
 
 pub struct PasswordActivity {

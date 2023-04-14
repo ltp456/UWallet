@@ -8,21 +8,24 @@ use anyhow::{anyhow, Result};
 use once_cell::sync::OnceCell;
 use serde::{Serialize, Serializer};
 
+pub use {eframe, egui};
 use state::AppState;
-
-use crate::lifecycle::ActName;
 
 pub mod lifecycle;
 pub mod executor;
 pub mod state;
 pub mod app;
 
+pub trait IView {
+    fn view(&mut self, ui: &mut egui::Ui);
+}
 
-pub struct Navigate(Sender<ActName>);
+pub trait IActivity {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState);
 
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState);
 
-impl Navigate {
-    pub fn navigate(&self, act_name: ActName) -> Result<()> {
-        self.0.send(act_name).map_err(|e| anyhow!("{}",e))
-    }
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState);
+
+    fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState);
 }

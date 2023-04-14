@@ -15,7 +15,7 @@ use coreui::state::AppState;
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, ViewStatus};
 
-use super::super::{IActivity, IView};
+use coreui::{IActivity, IView};
 
 pub struct SettingActivity {
     ctx: egui::Context,

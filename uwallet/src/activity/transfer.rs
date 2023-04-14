@@ -18,7 +18,7 @@ use polkadot::client::Client;
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
 
-use crate::{IActivity, IView};
+use coreui::{IActivity, IView};
 
 
 pub struct TransferActivity {
