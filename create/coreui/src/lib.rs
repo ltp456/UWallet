@@ -5,6 +5,7 @@ use std::sync::Arc;
 use std::sync::mpsc::Sender;
 
 use anyhow::{anyhow, Result};
+use once_cell::sync::OnceCell;
 use serde::{Serialize, Serializer};
 
 use state::AppState;
@@ -18,6 +19,7 @@ pub mod app;
 
 
 pub struct Navigate(Sender<ActName>);
+
 
 impl Navigate {
     pub fn navigate(&self, act_name: ActName) -> Result<()> {

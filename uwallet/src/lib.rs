@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use serde::{Serialize,Deserialize};
+
+use serde::{Deserialize, Serialize};
+
 pub use app::WalletApp;
 use coreui::state::AppState;
 
@@ -14,16 +16,14 @@ pub trait IView {
 }
 
 pub trait IActivity {
-    fn on_create(&mut self, state: &AppState);
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState);
 
-    fn on_resume(&mut self, state: &AppState);
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState);
 
-    fn on_pause(&mut self, state: &AppState);
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState);
 
     fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState);
 }
-
-
 
 
 #[cfg(test)]
@@ -32,7 +32,5 @@ mod test {
     use std::sync::{Arc, Mutex};
 
     #[test]
-    fn test() {
-
-    }
+    fn test() {}
 }

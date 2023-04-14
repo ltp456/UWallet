@@ -134,7 +134,7 @@ impl PasswordActivity {
 
 
 impl IActivity for PasswordActivity {
-    fn on_create(&mut self, state: &AppState) {
+    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
         if state.exists("PWD") {
             self.new_password = false;
         } else {
@@ -143,11 +143,11 @@ impl IActivity for PasswordActivity {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self, state: &AppState) {
+    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self, state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context,state: &AppState) {
         debug!("on_pause");
     }
 

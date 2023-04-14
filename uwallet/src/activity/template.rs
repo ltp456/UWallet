@@ -6,26 +6,24 @@ use anyhow::Result;
 use egui::Ui;
 use log::debug;
 use tokio::time;
+
 use coreui::executor::Executor;
 use coreui::lifecycle::ActName;
 use coreui::state::AppState;
-
 
 use crate::view::{common, state};
 
 use super::super::{IActivity, IView};
 
-
-
-pub struct TemplateActivity {
+pub struct TemplateActivity<'a> {
     ctx: egui::Context,
-    navigate: Sender<ActName>,
+    navigate: &'a Sender<ActName>,
     executor: Arc<Executor>,
     phrase: String,
 }
 
-impl TemplateActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> TemplateActivity {
+impl<'a> TemplateActivity<'a> {
+    pub fn new(ctx: egui::Context, navigate: &'a Sender<ActName>, executor: Arc<Executor>) -> TemplateActivity {
         Self {
             ctx,
             navigate,
@@ -41,21 +39,23 @@ impl TemplateActivity {
     }
 }
 
-impl IActivity for TemplateActivity {
-    fn on_create(&mut self,state: &AppState) {
+impl<'a> IActivity for TemplateActivity<'a> {
+    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self,state: &AppState) {
+    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self,state: &AppState) {
+    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
     }
 
-    fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame,state: &AppState) {
-        egui::CentralPanel::default().show(ctx, |ui| {});
+    fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState) {
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.label("template");
+        });
     }
 }
 

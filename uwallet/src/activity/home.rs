@@ -61,7 +61,7 @@ impl HomeActivity {
 }
 
 impl IActivity for HomeActivity {
-    fn on_create(&mut self, state: &AppState) {
+    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
         if let Some(phrase) = state.get_value("PHRASE") {
             self.address = polkadot::keys::Key::address_from_phrase(&phrase, None);
@@ -69,7 +69,7 @@ impl IActivity for HomeActivity {
         }
     }
 
-    fn on_resume(&mut self, state: &AppState) {
+    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
         self.view_status_sender.send(ViewStatus::Loading).unwrap();
         let sender = self.view_status_sender.clone();
@@ -92,7 +92,7 @@ impl IActivity for HomeActivity {
         });
     }
 
-    fn on_pause(&mut self, state: &AppState) {
+    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
         self.bottom_status_bar.stop();
     }

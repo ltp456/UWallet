@@ -7,6 +7,7 @@ use bip39::{Language, Mnemonic, MnemonicType};
 use egui::Ui;
 use log::debug;
 use tokio::time;
+
 use coreui::executor::Executor;
 use coreui::lifecycle::ActName;
 use coreui::state::AppState;
@@ -54,16 +55,17 @@ impl SettingActivity {
 }
 
 impl IActivity for SettingActivity {
-    fn on_create(&mut self, state: &AppState) {
+    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self, state: &AppState) {
+    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
         self.hit_info = "".to_string();
     }
 
-    fn on_pause(&mut self, state: &AppState) {
+    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
+        debug!("on_pause");
         self.bottom_status_bar.stop();
     }
 

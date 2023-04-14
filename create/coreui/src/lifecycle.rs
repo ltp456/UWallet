@@ -1,10 +1,13 @@
 use std::collections::{HashMap, VecDeque};
-use std::fmt::{Display, Formatter};
+use std::fmt::{Debug, Display, Formatter};
 
 use anyhow::{anyhow, Result};
+use once_cell::sync::OnceCell;
 
-#[derive(Clone, Eq, Hash, PartialEq)]
-pub struct ActName(String);
+
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+pub struct ActName(pub String);
 
 impl ActName {
     pub fn new(name: &str) -> Self {
@@ -46,7 +49,7 @@ pub enum IntentFlag {
 }
 
 
-pub struct StackManager {
+pub struct LifecycleManager {
     pub act_list: Vec<ActName>,
     pub lifecycles: HashMap<ActName, Lifecycle>,
     pub current: ActName,
@@ -54,7 +57,14 @@ pub struct StackManager {
 }
 
 
-impl StackManager {
+impl Debug for LifecycleManager {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LifecycleManager {{ ... }}")
+    }
+}
+
+
+impl LifecycleManager {
     pub fn new() -> Self {
         Self {
             act_list: Vec::new(),
@@ -163,31 +173,41 @@ mod test {
     use super::*;
 
     #[test]
+    fn test01() {
+
+    }
+
+
+    #[test]
     fn test() {
-        let mut stack_manager = StackManager::new();
+        let mut stack_manager = LifecycleManager::new();
         stack_manager.boot_act(&ActName::new("zero")).unwrap();
         stack_manager.register(&ActName::new("one")).unwrap();
         stack_manager.register(&ActName::new("two")).unwrap();
         stack_manager.register(&ActName::new("three")).unwrap();
 
-        stack_manager.start_act(ActName::new("one"), IntentFlag::Normal).unwrap();
+        stack_manager.start_act(ActName::new("one")).unwrap();
         stack_manager.info();
         stack_manager.reset_lifecycle();
 
-        stack_manager.start_act(ActName::new("two"), IntentFlag::Normal).unwrap();
+        stack_manager.start_act(ActName::new("two")).unwrap();
         stack_manager.info();
         stack_manager.reset_lifecycle();
 
 
-        stack_manager.start_act(ActName::new("three"), IntentFlag::Normal).unwrap();
+        stack_manager.start_act(ActName::new("three")).unwrap();
         stack_manager.info();
         stack_manager.reset_lifecycle();
 
-        stack_manager.start_act(ActName::new("zero"), IntentFlag::Normal).unwrap();
+        stack_manager.start_act(ActName::new("zero")).unwrap();
         stack_manager.info();
         stack_manager.reset_lifecycle();
 
-        stack_manager.start_act(ActName::new("one"), IntentFlag::Normal).unwrap();
+        stack_manager.start_act(ActName::new("one")).unwrap();
+        stack_manager.info();
+        stack_manager.reset_lifecycle();
+
+        stack_manager.start_act(ActName::new("zero")).unwrap();
         stack_manager.info();
         stack_manager.reset_lifecycle();
     }

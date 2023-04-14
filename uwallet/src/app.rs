@@ -6,23 +6,28 @@ use anyhow::Result;
 use log::{debug, error, info};
 use parking_lot::Mutex;
 
-use coreui::{executor::Executor, lifecycle::Lifecycle, state::AppState};
-use coreui::lifecycle::{ActName, StackManager};
+use coreui::{
+    executor::Executor,
+    lifecycle::{ActName, Lifecycle, LifecycleManager},
+    state::AppState,
+};
 
-use crate::activity::home::HomeActivity;
-use crate::activity::password::PasswordActivity;
-use crate::activity::phrase::PhraseActivity;
-use crate::activity::setting::SettingActivity;
-use crate::activity::transfer::TransferActivity;
-use crate::activity::welcome::WelcomeActivity;
-use crate::IActivity;
+use crate::{activity::{
+    home::HomeActivity,
+    password::PasswordActivity,
+    phrase::PhraseActivity,
+    setting::SettingActivity,
+    transfer::TransferActivity,
+    welcome::WelcomeActivity,
+}, IActivity};
+use crate::activity::template;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 //#[derive(serde::Deserialize, serde::Serialize)]
 //#[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct WalletApp {
     activities: HashMap<ActName, Box<dyn IActivity>>,
-    lifecycle_manager: StackManager,
+    lifecycle_manager: LifecycleManager,
     executor: Arc<Executor>,
     promise: Receiver<ActName>,
     navigate_sender: Sender<ActName>,
@@ -58,16 +63,15 @@ impl WalletApp {
         }
         let mut app = Self {
             activities: HashMap::new(),
-            lifecycle_manager: StackManager::new(),
+            lifecycle_manager: LifecycleManager::new(),
             executor: executor.clone(),
             promise: receiver,
             navigate_sender: sender.clone(),
             app_state,
         };
 
-
-        app.boot_activity(&ActName::new("welcome"), WelcomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
-        //app.boot_activity(ActivityKey::new("home"), HomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
+        app.boot_act(&ActName::new("welcome"), WelcomeActivity::new( sender.clone()));
+        //app.boot_act(&ActName::new("temp"), template::TemplateActivity::new(cc.egui_ctx.clone(), &app.navigate_sender, executor.clone()));
         app.register(&ActName::new("password"), PasswordActivity::new(cc.egui_ctx.clone(), sender.clone()));
         app.register(&ActName::new("phrase"), PhraseActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
         app.register(&ActName::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
@@ -81,7 +85,7 @@ impl WalletApp {
         self.activities.insert(activity_key.clone(), Box::new(activity));
     }
 
-    pub fn boot_activity(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
+    pub fn boot_act(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
         self.lifecycle_manager.boot_act(activity_key).unwrap();
         self.activities.insert(activity_key.clone(), Box::new(activity));
     }
@@ -90,20 +94,18 @@ impl WalletApp {
         let (current, prev) = self.lifecycle_manager.current();
         let current_activity = self.activities.get_mut(&current).unwrap();
         current_activity.set_view(ctx, _frame, &self.app_state);
-
         let lifecycle = self.lifecycle_manager.lifecycle(&current).unwrap();
         if lifecycle.on_create {
-            current_activity.on_create(&self.app_state);
+            current_activity.on_create(ctx,&self.app_state);
         }
         if lifecycle.on_resume {
-            current_activity.on_resume(&self.app_state);
+            current_activity.on_resume(ctx,&self.app_state);
         }
-
         if let Some(prev_activity) = prev {
             let prev_lifecycle = self.lifecycle_manager.lifecycle(&prev_activity).unwrap();
             let prev_activity = self.activities.get_mut(&prev_activity).unwrap();
             if prev_lifecycle.on_pause {
-                prev_activity.on_pause(&self.app_state);
+                prev_activity.on_pause(ctx,&self.app_state);
             }
         }
         self.lifecycle_manager.reset_lifecycle();

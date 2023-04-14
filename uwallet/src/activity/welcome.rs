@@ -6,34 +6,33 @@ use anyhow::Result;
 use egui::Ui;
 use log::debug;
 use tokio::time;
-use coreui::executor::Executor;
-use coreui::lifecycle::ActName;
-use coreui::state::AppState;
+
+use coreui::{
+    executor::{Executor, EXECUTOR},
+    lifecycle::ActName,
+    state::AppState,
+};
 
 use crate::{IActivity, IView};
 
 pub struct WelcomeActivity {
-    ctx: egui::Context,
     navigate: Sender<ActName>,
-    executor: Arc<Executor>,
 }
 
 impl WelcomeActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> WelcomeActivity {
+    pub fn new(navigate: Sender<ActName>) -> WelcomeActivity {
         Self {
-            ctx,
             navigate,
-            executor,
         }
     }
 }
 
 impl IActivity for WelcomeActivity {
-    fn on_create(&mut self, state: &AppState) {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
-        let ctx = self.ctx.clone();
+        let ctx = ctx.clone();
         let navigate = self.navigate.clone();
-        self.executor.spawn(async move {
+        EXECUTOR.spawn(async move {
             time::sleep(Duration::from_millis(2500)).await;
             debug!("navigate to password");
             navigate.send(ActName::new("password")).unwrap();
@@ -41,11 +40,11 @@ impl IActivity for WelcomeActivity {
         });
     }
 
-    fn on_resume(&mut self, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self, state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
     }
 

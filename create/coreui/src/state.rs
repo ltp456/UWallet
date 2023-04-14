@@ -1,4 +1,3 @@
-
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -19,12 +18,14 @@ impl AppState {
         self.0.lock().unwrap().get(key).cloned()
     }
 
+    pub fn get_data(&self) -> Option<HashMap<String, String>> {
+        Some(self.0.lock().unwrap().clone())
+    }
+
     pub fn exists(&self, key: &str) -> bool {
         self.0.lock().unwrap().contains_key(key)
     }
 }
-
-
 
 
 #[cfg(test)]
