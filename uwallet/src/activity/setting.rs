@@ -4,23 +4,27 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
-use egui::Ui;
+
 use log::debug;
 use tokio::time;
 
-use coreui::executor::Executor;
-use coreui::lifecycle::ActName;
-use coreui::state::AppState;
+use coreui::{
+    executor::{Executor, EXECUTOR},
+    lifecycle::ActName,
+    state::AppState,
+    IActivity,
+    egui,
+    IView,
+    eframe,
+};
+use coreui::lifecycle::start_act;
 
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, ViewStatus};
 
-use coreui::{IActivity, IView};
+
 
 pub struct SettingActivity {
-    ctx: egui::Context,
-    navigate: Sender<ActName>,
-    executor: Arc<Executor>,
     balance: String,
     endpoint: String,
     bottom_status_bar: BottomStatusBar,
@@ -32,25 +36,21 @@ pub struct SettingActivity {
 }
 
 impl SettingActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> SettingActivity {
+    pub fn new(ctx:egui::Context) -> SettingActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
-            ctx: ctx.clone(),
-            navigate,
-            executor: executor.clone(),
             balance: "11231231231231231".to_string(),
             endpoint: "".to_string(),
             status_sender: sender,
             status_receiver: receiver,
-            bottom_status_bar: BottomStatusBar::new(ctx, executor),
+            bottom_status_bar: BottomStatusBar::new(ctx),
             status: ViewStatus::Normal,
             hit_info: "".to_string(),
         }
     }
 
     pub fn navigate(&mut self, key: ActName) {
-        self.navigate.send(key).unwrap();
-        self.ctx.request_repaint();
+      start_act(key).unwrap();
     }
 }
 

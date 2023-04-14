@@ -3,10 +3,14 @@ use std::sync::Arc;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::time::Duration;
 
-use egui::Ui;
 use log::debug;
 use tokio::time;
-use coreui::executor::Executor;
+use coreui::{
+    executor::Executor,
+    egui,
+    egui::Ui,
+};
+use coreui::executor::EXECUTOR;
 
 
 use crate::IView;
@@ -39,7 +43,7 @@ pub fn hit_info(ui: &mut Ui, msg: &str) {
 
 
 pub struct BottomStatusBar {
-    executor: Arc<Executor>,
+
     t_receiver: Receiver<i32>,
     t_sender: Sender<i32>,
     c_sender: Option<Sender<i32>>,
@@ -53,11 +57,10 @@ pub struct BottomStatusBar {
 }
 
 impl BottomStatusBar {
-    pub fn new(ctx: egui::Context, executor: Arc<Executor>) -> Self {
+    pub fn new(ctx: egui::Context) -> Self {
         let (t_sender, t_receiver) = channel::<i32>();
         Self {
             ctx,
-            executor: executor.clone(),
             t_sender,
             t_receiver,
             c_sender: None,
@@ -85,7 +88,7 @@ impl BottomStatusBar {
             let (c_sender, c_receiver) = std::sync::mpsc::channel::<i32>();
             let sender = self.t_sender.clone();
             let ctx = self.ctx.clone();
-            self.executor.spawn(async move {
+            EXECUTOR.spawn(async move {
                 loop {
                     if let Ok(value) = c_receiver.try_recv() {
                         debug!("loading  view exit now");

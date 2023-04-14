@@ -1,13 +1,16 @@
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
+
 use log::{debug, error, info};
+
 use coreui::{
+    eframe,
+    egui,
     executor::Executor,
-    lifecycle::{ActName, Lifecycle, LifecycleManager},
-    state::AppState,
-    IActivity,IView,
-    egui,eframe,
+    IActivity, IView,
+    lifecycle::{ActName, Lifecycle, LifecycleManager}, state::AppState,
 };
+
 use crate::{activity::{
     home::HomeActivity,
     password::PasswordActivity,
@@ -19,7 +22,6 @@ use crate::{activity::{
 
 mod activity;
 mod view;
-
 
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -50,20 +52,19 @@ impl WalletApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         //https://rpc.polkadot.io
         let client = Arc::new(polkadot::client::Client::new(String::from("http://127.0.0.1:9933")));
-        let (sender, receiver) = std::sync::mpsc::channel::<ActName>();
         let executor = Arc::new(Executor::new());
         let mut app_state = AppState::new();
         if let Some(storage) = cc.storage {
             app_state = AppState(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
         }
-        let mut app = coreui::app::App::new(receiver, app_state);
-        app.boot_act(&ActName::new("welcome"), WelcomeActivity::new(sender.clone()));
-        //app.boot_act(&ActName::new("temp"), template::TemplateActivity::new(cc.egui_ctx.clone(), &app.navigate_sender, executor.clone()));
-        app.register(&ActName::new("password"), PasswordActivity::new(cc.egui_ctx.clone(), sender.clone()));
-        app.register(&ActName::new("phrase"), PhraseActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
-        app.register(&ActName::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
-        app.register(&ActName::new("setting"), SettingActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone()));
-        app.register(&ActName::new("home"), HomeActivity::new(cc.egui_ctx.clone(), sender.clone(), executor.clone(), client.clone()));
+        let mut app = coreui::app::App::new(cc.egui_ctx.clone(), app_state);
+        app.boot_act(&ActName::new("welcome"), WelcomeActivity::new());
+        //app.boot_act(&ActName::new("temp"), template::TemplateActivity::new());
+        app.register(&ActName::new("password"), PasswordActivity::new());
+        app.register(&ActName::new("phrase"), PhraseActivity::new());
+        app.register(&ActName::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), client.clone()));
+        app.register(&ActName::new("setting"), SettingActivity::new(cc.egui_ctx.clone()));
+        app.register(&ActName::new("home"), HomeActivity::new(cc.egui_ctx.clone(), client.clone()));
         Self {
             app
         }

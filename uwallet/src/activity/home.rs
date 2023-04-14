@@ -5,26 +5,28 @@ use std::time::Duration;
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
 use codec::{Decode, Encode};
-use egui::Ui;
 use log::{debug, error};
 use tokio::time;
-use coreui::executor::Executor;
-use coreui::lifecycle::ActName;
-use coreui::state::AppState;
 
-use polkadot::client::Client;
-use polkadot::rpc::{*};
-use polkadot::rpc::types::AccountInfo;
+use coreui::{
+    eframe,
+    egui,
+    executor::{Executor, EXECUTOR},
+    IActivity,
+    IView,
+    lifecycle::ActName,
+    state::AppState,
+};
+use coreui::lifecycle::start_act;
+use polkadot::{
+    client::Client,
+    rpc::{*},
+    rpc::types::AccountInfo,
+};
 
-use crate::view::{common, state};
-use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
-use coreui::{IActivity, IView};
-
+use crate::view::{common, state::{BottomStatusBar, DataModel, ViewStatus}};
 
 pub struct HomeActivity {
-    ctx: egui::Context,
-    navigate: Sender<ActName>,
-    executor: Arc<Executor>,
     balance: String,
     nonce: String,
     address: String,
@@ -37,16 +39,13 @@ pub struct HomeActivity {
 }
 
 impl HomeActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>, client: Arc<Client>) -> HomeActivity {
+    pub fn new(ctx: egui::Context, client: Arc<Client>) -> HomeActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
-            ctx: ctx.clone(),
-            navigate,
-            executor: executor.clone(),
             balance: "0.0".to_string(),
             address: "15QFBQY6TF6Abr6vA1r6opRh6RbRSMWgBC1PcCMDDzRSEXf5".to_string(),
             nonce: "0".to_string(),
-            bottom_status_bar: BottomStatusBar::new(ctx.clone(), executor.clone()),
+            bottom_status_bar: BottomStatusBar::new(ctx.clone()),
             view_status_sender: sender,
             view_status_receiver: receiver,
             client,
@@ -55,13 +54,12 @@ impl HomeActivity {
     }
 
     pub fn navigate(&mut self, key: ActName) {
-        self.navigate.send(key).unwrap();
-        self.ctx.request_repaint();
+        start_act(key).unwrap();
     }
 }
 
 impl IActivity for HomeActivity {
-    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
         if let Some(phrase) = state.get_value("PHRASE") {
             self.address = polkadot::keys::Key::address_from_phrase(&phrase, None);
@@ -69,14 +67,14 @@ impl IActivity for HomeActivity {
         }
     }
 
-    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
         self.view_status_sender.send(ViewStatus::Loading).unwrap();
         let sender = self.view_status_sender.clone();
-        let ctx = self.ctx.clone();
+        let ctx = ctx.clone();
         let client = self.client.clone();
         let address = self.address.clone();
-        self.executor.spawn(async move {
+        EXECUTOR.spawn(async move {
             debug!("start request account info");
             match client.system_account(&address).await {
                 Ok(account) => {
@@ -92,7 +90,7 @@ impl IActivity for HomeActivity {
         });
     }
 
-    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
         self.bottom_status_bar.stop();
     }
@@ -124,7 +122,7 @@ impl IActivity for HomeActivity {
                         self.balance = format!("{}", account.data.free);
                         self.nonce = format!("{}", account.nonce);
                     }
-                    _=>{}
+                    _ => {}
                 }
             }
             common::single_label(ui, "Address:\t\t", &self.address);

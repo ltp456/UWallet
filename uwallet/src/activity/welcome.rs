@@ -3,40 +3,34 @@ use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 use anyhow::Result;
-use egui::Ui;
 use log::debug;
 use tokio::time;
 
 use coreui::{
+    eframe,
+    egui,
     executor::{Executor, EXECUTOR},
-    lifecycle::ActName,
+    IActivity,
+    IView,
+    lifecycle::{ActName, start_act},
     state::AppState,
 };
 
-use coreui::{IActivity, IView};
-
-pub struct WelcomeActivity {
-    navigate: Sender<ActName>,
-}
+pub struct WelcomeActivity {}
 
 impl WelcomeActivity {
-    pub fn new(navigate: Sender<ActName>) -> WelcomeActivity {
-        Self {
-            navigate,
-        }
+    pub fn new() -> WelcomeActivity {
+        Self {}
     }
 }
 
 impl IActivity for WelcomeActivity {
     fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
-        let ctx = ctx.clone();
-        let navigate = self.navigate.clone();
         EXECUTOR.spawn(async move {
             time::sleep(Duration::from_millis(2500)).await;
             debug!("navigate to password");
-            navigate.send(ActName::new("password")).unwrap();
-            ctx.request_repaint();
+            start_act(ActName::new("password")).unwrap();
         });
     }
 

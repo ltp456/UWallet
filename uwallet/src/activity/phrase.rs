@@ -4,31 +4,32 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
-use egui::Ui;
+
 use log::debug;
 use tokio::time;
-use coreui::executor::Executor;
-use coreui::lifecycle::ActName;
+use coreui::{
+    executor::{Executor, EXECUTOR},
+    lifecycle::ActName,
+    state::AppState,
+    IActivity,
+    egui,
+    IView,
+    eframe,
+};
+use coreui::lifecycle::start_act;
 
 use crate::view::{common, state};
 
-use coreui::{IActivity, IView};
-use super::super::AppState;
+
 
 pub struct PhraseActivity {
-    ctx: egui::Context,
-    navigate: Sender<ActName>,
-    executor: Arc<Executor>,
     phrase: String,
     import_ui: bool,
 }
 
 impl PhraseActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>) -> PhraseActivity {
+    pub fn new() -> PhraseActivity {
         Self {
-            ctx,
-            navigate,
-            executor,
             phrase: Default::default(),
             import_ui: false,
         }
@@ -36,7 +37,6 @@ impl PhraseActivity {
     pub fn generate_phrase(&mut self) {
         let mnemonic = Mnemonic::new(MnemonicType::Words12, Language::English);
         self.phrase = mnemonic.phrase().to_string();
-        self.ctx.request_repaint();
     }
 
     pub fn confirm_phrase(&mut self, state: &AppState) {
@@ -44,8 +44,7 @@ impl PhraseActivity {
             return;
         }
         state.set_value("PHRASE".to_owned(), self.phrase.clone());
-        self.navigate.send(ActName::new("home")).unwrap();
-        self.ctx.request_repaint();
+        start_act(ActName::new("home")).unwrap();
     }
 }
 

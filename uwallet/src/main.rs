@@ -5,13 +5,13 @@ use log::LevelFilter;
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
-fn main() -> eframe::Result<()> {
+fn main() -> coreui::eframe::Result<()> {
     env_logger::builder().filter(None, LevelFilter::Debug).init();
     // Log to stdout (if you run with `RUST_LOG=debug`).
     //tracing_subscriber::fmt::init();
 
-    let native_options = eframe::NativeOptions::default();
-    eframe::run_native(
+    let native_options = coreui::eframe::NativeOptions::default();
+    coreui::eframe::run_native(
         "UWallet",
         native_options,
         Box::new(|cc| Box::new(uwallet::WalletApp::new(cc))),

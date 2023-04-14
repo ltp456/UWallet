@@ -1,9 +1,47 @@
 use std::collections::{HashMap, VecDeque};
 use std::fmt::{Debug, Display, Formatter};
+use std::sync::mpsc::Sender;
+use std::sync::Mutex;
 
 use anyhow::{anyhow, Result};
 use once_cell::sync::OnceCell;
 
+pub struct Navigate {
+    sender: Sender<ActName>,
+    ctx: egui::Context,
+}
+
+impl Navigate {
+    pub fn new(sender: Sender<ActName>, ctx: egui::Context) -> Self {
+        Self {
+            sender,
+            ctx,
+        }
+    }
+}
+
+
+impl Debug for Navigate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", "Navigate")
+    }
+}
+
+
+static INSTANCE: OnceCell<Mutex<Navigate>> = OnceCell::new();
+
+
+pub fn init_global_navigate(navigate: Navigate) {
+    INSTANCE.set(Mutex::new(navigate)).unwrap();
+}
+
+pub fn start_act(act_name: ActName) -> Result<()> {
+    let instance = INSTANCE.get().unwrap();
+    let navigate = instance.lock().unwrap();
+    navigate.sender.send(act_name)?;
+    navigate.ctx.request_repaint();
+    Ok(())
+}
 
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
@@ -173,9 +211,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn test01() {
-
-    }
+    fn test01() {}
 
 
     #[test]

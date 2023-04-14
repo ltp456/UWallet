@@ -4,12 +4,18 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
-use egui::Ui;
 use log::debug;
 use tokio::time;
-use coreui::executor::Executor;
-use coreui::lifecycle::ActName;
-use coreui::state::AppState;
+use coreui::{
+    executor::{Executor, EXECUTOR},
+    lifecycle::ActName,
+    state::AppState,
+    IActivity,
+    egui,
+    IView,
+    eframe,
+};
+use coreui::lifecycle::start_act;
 
 use polkadot::client::Client;
 
@@ -18,13 +24,9 @@ use polkadot::client::Client;
 use crate::view::{common, state};
 use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
 
-use coreui::{IActivity, IView};
 
 
 pub struct TransferActivity {
-    ctx: egui::Context,
-    navigate: Sender<ActName>,
-    executor: Arc<Executor>,
     amount: String,
     dest_address: String,
     bottom_status_bar: BottomStatusBar,
@@ -37,24 +39,21 @@ pub struct TransferActivity {
 }
 
 impl TransferActivity {
-    pub fn new(ctx: egui::Context, navigate: Sender<ActName>, executor: Arc<Executor>, client: Arc<Client>) -> TransferActivity {
+    pub fn new(ctx:egui::Context,client: Arc<Client>) -> TransferActivity {
         let (status_sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
-            ctx: ctx.clone(),
-            navigate,
             client,
-            executor: executor.clone(),
             amount: "1234567891".to_string(),
             dest_address: "14dp76EwTctDZmX8bgJV3jC6KsnCCpjwzvjMpm4tc2AkJN2L".to_string(),
             status_sender,
             status_receiver: receiver,
-            bottom_status_bar: BottomStatusBar::new(ctx, executor),
+            bottom_status_bar: BottomStatusBar::new(ctx),
             status: ViewStatus::Normal,
             tx_list: vec![],
         }
     }
 
-    pub fn transfer(&mut self, state: &AppState) {
+    pub fn transfer(&mut self, ctx:&egui::Context,state: &AppState) {
         let mut from = String::new();
         let mut seed = String::new();
         if let Some(phrase) = state.get_value("PHRASE") {
@@ -63,12 +62,12 @@ impl TransferActivity {
         }
         debug!("start transfer");
         self.status_sender.send(ViewStatus::Loading).unwrap();
-        let ctx = self.ctx.clone();
+        let ctx = ctx.clone();
         let sender = self.status_sender.clone();
         let client = self.client.clone();
         let address = self.dest_address.clone();
         let amount = self.amount.clone().parse::<u128>().unwrap();
-        self.executor.spawn(async move {
+        EXECUTOR.spawn(async move {
             match client.transfer(seed, from, address, amount).await {
                 Ok(result) => {
                     sender.send(ViewStatus::Success(DataModel { data_type: 0, data: result })).unwrap();
@@ -83,8 +82,7 @@ impl TransferActivity {
 
 
     pub fn navigate(&mut self, key: ActName) {
-        self.navigate.send(key).unwrap();
-        self.ctx.request_repaint();
+        start_act(key).unwrap();
     }
 }
 
@@ -142,7 +140,7 @@ impl IActivity for TransferActivity {
                 common::five_space(ui);
             }
             if common::right_bottom_button(ui, "Submit") {
-                self.transfer(state);
+                self.transfer(ctx,state);
             }
             self.bottom_status_bar.set_view(ui, &self.status);
         });

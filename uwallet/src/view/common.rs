@@ -1,6 +1,7 @@
 use eframe::emath::Vec2;
-use egui::Ui;
 use log::debug;
+
+use coreui::{eframe, egui, egui::Ui};
 
 pub fn left_menu(ctx: &egui::Context) -> (bool, bool, bool) {
     let mut home = false;

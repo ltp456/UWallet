@@ -4,9 +4,12 @@ use std::sync::mpsc::{Receiver, Sender};
 
 use log::debug;
 
-use crate::{AppState, IActivity};
-use crate::executor::Executor;
-use crate::lifecycle::{ActName, LifecycleManager};
+use crate::{
+    AppState,
+    executor::{*},
+    IActivity,
+    lifecycle::{*},
+};
 
 pub struct App {
     activities: HashMap<ActName, Box<dyn IActivity>>,
@@ -17,15 +20,17 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(receiver: Receiver<ActName>, state: AppState) -> Self {
+    pub fn new(ctx: egui::Context, state: AppState) -> Self {
+        let (sender,receiver) = std::sync::mpsc::channel::<ActName>();
+        init_global_navigate(Navigate::new(sender, ctx));
         Self {
             activities: HashMap::new(),
             lifecycle_manager: LifecycleManager::new(),
             promise: receiver,
             state,
-
         }
     }
+
     pub fn register(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
         self.lifecycle_manager.register(activity_key).unwrap();
         self.activities.insert(activity_key.clone(), Box::new(activity));
