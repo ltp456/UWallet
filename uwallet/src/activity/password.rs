@@ -41,13 +41,9 @@ impl PasswordActivity {
         if let Ok(decode_data) = utils::aes::simple_decode(data.as_bytes(), self.password.as_bytes()) {
             state.init_data(&decode_data);
             return Ok("ok".to_owned());
+        } else {
+            return Err(anyhow!(""));
         }
-        return Err(anyhow!(""));
-    }
-
-
-    fn get_pwd_hash(&self) -> Result<String> {
-        utils::sha256(self.password.as_bytes())
     }
 
 
@@ -59,7 +55,7 @@ impl PasswordActivity {
         return Ok("Ok".to_string());
     }
 
-    fn navigate_phrase(&self, state: &AppState) {
+    fn navigate_activity(&self, state: &AppState) {
         if state.exists(PHRASE) {
             start_act(ActName::new("home")).unwrap();
         } else {
@@ -93,7 +89,7 @@ impl PasswordActivity {
                 common::fifteen_space(ui);
                 if common::button(ui, "Submit").clicked() {
                     if let Ok(ok) = self.set_new_password(state) {
-                        return self.navigate_phrase(state);
+                        return self.navigate_activity(state);
                     } else {
                         self.pwd_error = true;
                     }
@@ -129,7 +125,7 @@ impl PasswordActivity {
                 common::fifteen_space(ui);
                 if common::button(ui, "Submit").clicked() {
                     if let Ok(ok) = self.check_password(state) {
-                        return self.navigate_phrase(state);
+                        self.navigate_activity(state);
                     } else {
                         self.pwd_error = true;
                     }
@@ -143,7 +139,7 @@ impl PasswordActivity {
 
 impl IActivity for PasswordActivity {
     fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
-        if state.pwd_exists() {
+        if state.encode_data_exists() {
             self.new_password = false;
         } else {
             self.new_password = true;

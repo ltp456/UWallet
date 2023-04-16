@@ -44,7 +44,7 @@ impl eframe::App for WalletApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         debug!("app shutdown now");
-        let encode_data = self.encrypt().unwrap();
+        let encode_data = self.encrypt_state_data().unwrap();
         eframe::set_value(storage, eframe::APP_KEY, &encode_data);
     }
 }
@@ -57,7 +57,7 @@ impl WalletApp {
         let client = Arc::new(polkadot::client::Client::new(String::from("http://127.0.0.1:9933")));
         let mut app_state = AppState::new();
         if let Some(storage) = cc.storage {
-            app_state.load_data(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
+            app_state.set_encode_data(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
         }
         let mut app = coreui::app::App::new(cc.egui_ctx.clone(), app_state);
         app.boot_act(&ActName::new("welcome"), WelcomeActivity::new());
@@ -72,7 +72,7 @@ impl WalletApp {
         }
     }
 
-    pub fn encrypt(&self) -> Result<String> {
+    pub fn encrypt_state_data(&self) -> Result<String> {
         let map = self.app.state.get_data().unwrap();
         let pwd = self.app.state.get_value(PWD).unwrap();
         let data = serde_json::to_string(&map).map_err(|e| { anyhow!("{}",e) })?;

@@ -29,15 +29,16 @@ impl AppState {
     pub fn init_data(&self, data: &[u8]) {
         self.0.lock().unwrap().reload(data);
     }
+
     pub fn get_encode_data(&self) -> Result<String> {
         Ok(self.0.lock().unwrap().secret_data.clone())
     }
 
-    pub fn pwd_exists(&self) -> bool {
+    pub fn encode_data_exists(&self) -> bool {
         self.0.lock().unwrap().secret_data != ""
     }
 
-    pub fn load_data(&self, data: String) {
+    pub fn set_encode_data(&self, data: String) {
         self.0.lock().unwrap().secret_data = data;
     }
 
