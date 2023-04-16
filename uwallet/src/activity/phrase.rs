@@ -16,15 +16,14 @@ use coreui::{
     lifecycle::ActName,
     state::AppState,
 };
-use coreui::lifecycle::start_act;
+use coreui::lifecycle::start_activity;
 use utils::aes_gcm_siv::{AeadCore, Nonce};
 use utils::rand;
 
 use crate::{
-    activity::{constants::{*}},
     view::{common, state},
 };
-
+use crate::constants::{*};
 
 
 pub struct PhraseActivity {
@@ -49,8 +48,8 @@ impl PhraseActivity {
         if self.phrase == "" {
             return;
         }
-        state.set_value(PHRASE, &self.phrase);
-        start_act(ActName::new("home")).unwrap();
+        state.set_value(PHRASE_KEY, &self.phrase);
+        start_activity(ActName::new(HOME)).unwrap();
     }
 }
 

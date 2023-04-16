@@ -35,7 +35,7 @@ pub fn init_global_navigate(navigate: Navigate) {
     INSTANCE.set(Mutex::new(navigate)).unwrap();
 }
 
-pub fn start_act(act_name: ActName) -> Result<()> {
+pub fn start_activity(act_name: ActName) -> Result<()> {
     let instance = INSTANCE.get().unwrap();
     let navigate = instance.lock().unwrap();
     navigate.sender.send(act_name)?;

@@ -6,25 +6,22 @@ use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
 use log::debug;
 use tokio::time;
-use coreui::{
-    executor::{Executor, EXECUTOR},
-    lifecycle::ActName,
-    state::AppState,
-    IActivity,
-    egui,
-    IView,
-    eframe,
-};
-use coreui::lifecycle::start_act;
 
+use coreui::{
+    eframe,
+    egui,
+    executor::{Executor, EXECUTOR},
+    IActivity,
+    IView,
+    lifecycle::{ActName, start_activity},
+    state::AppState,
+};
 use polkadot::client::Client;
 
-
-
-use crate::view::{common, state};
-use crate::view::state::{BottomStatusBar, DataModel, ViewStatus};
-
-
+use crate::{
+    constants::{*},
+    view::{common, state::{BottomStatusBar, DataModel, ViewStatus}},
+};
 
 pub struct TransferActivity {
     amount: String,
@@ -39,7 +36,7 @@ pub struct TransferActivity {
 }
 
 impl TransferActivity {
-    pub fn new(ctx:egui::Context,client: Arc<Client>) -> TransferActivity {
+    pub fn new(ctx: egui::Context, client: Arc<Client>) -> TransferActivity {
         let (status_sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
             client,
@@ -53,10 +50,10 @@ impl TransferActivity {
         }
     }
 
-    pub fn transfer(&mut self, ctx:&egui::Context,state: &AppState) {
+    pub fn transfer(&mut self, ctx: &egui::Context, state: &AppState) {
         let mut from = String::new();
         let mut seed = String::new();
-        if let Some(phrase) = state.get_value("PHRASE") {
+        if let Some(phrase) = state.get_value(PHRASE_KEY) {
             from = polkadot::keys::Key::address_from_phrase(&phrase, None);
             seed = format!("0x{}", polkadot::keys::Key::generate_seed(&phrase, None));
         }
@@ -82,20 +79,20 @@ impl TransferActivity {
 
 
     pub fn navigate(&mut self, key: ActName) {
-        start_act(key).unwrap();
+        start_activity(key).unwrap();
     }
 }
 
 impl IActivity for TransferActivity {
-    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
         self.bottom_status_bar.stop();
     }
@@ -103,11 +100,11 @@ impl IActivity for TransferActivity {
     fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState) {
         let (home, transfer, setting) = common::left_menu(ctx);
         if home {
-            self.navigate(ActName::new("home"));
+            self.navigate(ActName::new(HOME));
         } else if transfer {
-            self.navigate(ActName::new("transfer"));
+            self.navigate(ActName::new(TRANSFER));
         } else if setting {
-            self.navigate(ActName::new("setting"));
+            self.navigate(ActName::new(SETTING));
         }
         if let Ok(mut data) = self.status_receiver.try_recv() {
             self.status = data.clone();
@@ -136,11 +133,11 @@ impl IActivity for TransferActivity {
                 ui.separator();
             }
             for item in &self.tx_list {
-                common::hyperlink_to(ui, &format!("Hash: {}",item));
+                common::hyperlink_to(ui, &format!("Hash: {}", item));
                 common::five_space(ui);
             }
             if common::right_bottom_button(ui, "Submit") {
-                self.transfer(ctx,state);
+                self.transfer(ctx, state);
             }
             self.bottom_status_bar.set_view(ui, &self.status);
         });

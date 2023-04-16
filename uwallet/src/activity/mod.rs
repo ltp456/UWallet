@@ -7,7 +7,6 @@ pub mod home;
 pub mod template;
 pub mod transfer;
 pub mod setting;
-pub mod constants;
 
 
 

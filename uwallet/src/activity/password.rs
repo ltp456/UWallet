@@ -9,14 +9,14 @@ use coreui::{
     executor::{Executor, EXECUTOR},
     IActivity,
     IView,
-    lifecycle::{ActName, start_act},
+    lifecycle::{ActName, start_activity},
     state::AppState,
 };
 
 use crate::{
-    activity::{constants::{*}},
     view::{common, state},
 };
+use crate::constants::{*};
 
 pub struct PasswordActivity {
     password: String,
@@ -51,15 +51,15 @@ impl PasswordActivity {
         if self.password != self.confirm_pwd || self.password == "" {
             return Err(anyhow!("password not match"));
         }
-        state.set_value(PWD, &self.password);
+        state.set_value(PWD_KEY, &self.password);
         return Ok("Ok".to_string());
     }
 
     fn navigate_activity(&self, state: &AppState) {
-        if state.exists(PHRASE) {
-            start_act(ActName::new("home")).unwrap();
+        if state.exists(PHRASE_KEY) {
+            start_activity(ActName::new(HOME)).unwrap();
         } else {
-            start_act(ActName::new("phrase")).unwrap();
+            start_activity(ActName::new(PHRASE)).unwrap();
         }
     }
 

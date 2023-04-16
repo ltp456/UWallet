@@ -14,17 +14,19 @@ use coreui::{
     executor::{Executor, EXECUTOR},
     IActivity,
     IView,
-    lifecycle::ActName,
+    lifecycle::{ActName, start_activity},
     state::AppState,
 };
-use coreui::lifecycle::start_act;
 use polkadot::{
     client::Client,
     rpc::{*},
     rpc::types::AccountInfo,
 };
 
-use crate::view::{common, state::{BottomStatusBar, DataModel, ViewStatus}};
+use crate::{
+    constants::{*},
+    view::{common, state::{BottomStatusBar, DataModel, ViewStatus}},
+};
 
 pub struct HomeActivity {
     balance: String,
@@ -54,14 +56,14 @@ impl HomeActivity {
     }
 
     pub fn navigate(&mut self, key: ActName) {
-        start_act(key).unwrap();
+        start_activity(key).unwrap();
     }
 }
 
 impl IActivity for HomeActivity {
     fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
-        if let Some(phrase) = state.get_value("PHRASE") {
+        if let Some(phrase) = state.get_value(PHRASE_KEY) {
             self.address = polkadot::keys::Key::address_from_phrase(&phrase, None);
             debug!("address: {}",self.address);
         }
@@ -100,11 +102,11 @@ impl IActivity for HomeActivity {
         // left menu
         let (home, transfer, setting) = common::left_menu(ctx);
         if home {
-            self.navigate(ActName::new("home"));
+            self.navigate(ActName::new(HOME));
         } else if transfer {
-            self.navigate(ActName::new("transfer"));
+            self.navigate(ActName::new(TRANSFER));
         } else if setting {
-            self.navigate(ActName::new("setting"));
+            self.navigate(ActName::new(SETTING));
         }
         //
 

@@ -4,6 +4,9 @@ use std::sync::mpsc::{Receiver, Sender};
 use anyhow::{anyhow, Result};
 use log::{debug, error, info};
 
+use constants::{
+    HOME, PASSWORD, PHRASE, PWD_KEY, SETTING, TRANSFER, WELCOME,
+};
 use coreui::{
     eframe,
     egui,
@@ -20,10 +23,10 @@ use crate::{activity::{
     transfer::TransferActivity,
     welcome::WelcomeActivity,
 }};
-use crate::activity::constants::PWD;
 
 mod activity;
 mod view;
+pub mod constants;
 
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -60,13 +63,13 @@ impl WalletApp {
             app_state.set_encode_data(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
         }
         let mut app = coreui::app::App::new(cc.egui_ctx.clone(), app_state);
-        app.boot_act(&ActName::new("welcome"), WelcomeActivity::new());
+        app.boot_act(&ActName::new(WELCOME), WelcomeActivity::new());
         //app.boot_act(&ActName::new("temp"), template::TemplateActivity::new());
-        app.register(&ActName::new("password"), PasswordActivity::new());
-        app.register(&ActName::new("phrase"), PhraseActivity::new());
-        app.register(&ActName::new("transfer"), TransferActivity::new(cc.egui_ctx.clone(), client.clone()));
-        app.register(&ActName::new("setting"), SettingActivity::new(cc.egui_ctx.clone()));
-        app.register(&ActName::new("home"), HomeActivity::new(cc.egui_ctx.clone(), client.clone()));
+        app.register(&ActName::new(PASSWORD), PasswordActivity::new());
+        app.register(&ActName::new(PHRASE), PhraseActivity::new());
+        app.register(&ActName::new(TRANSFER), TransferActivity::new(cc.egui_ctx.clone(), client.clone()));
+        app.register(&ActName::new(SETTING), SettingActivity::new(cc.egui_ctx.clone()));
+        app.register(&ActName::new(HOME), HomeActivity::new(cc.egui_ctx.clone(), client.clone()));
         Self {
             app
         }
@@ -74,7 +77,7 @@ impl WalletApp {
 
     pub fn encrypt_state_data(&self) -> Result<String> {
         let map = self.app.state.get_data().unwrap();
-        let pwd = self.app.state.get_value(PWD).unwrap();
+        let pwd = self.app.state.get_value(PWD_KEY).unwrap();
         let data = serde_json::to_string(&map).map_err(|e| { anyhow!("{}",e) })?;
         let result = utils::aes::simple_encode(data.as_bytes(), pwd.as_bytes()).unwrap();
         Ok(result)

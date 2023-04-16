@@ -12,9 +12,10 @@ use coreui::{
     executor::{Executor, EXECUTOR},
     IActivity,
     IView,
-    lifecycle::{ActName, start_act},
+    lifecycle::{ActName, start_activity},
     state::AppState,
 };
+use crate::PASSWORD;
 
 pub struct WelcomeActivity {}
 
@@ -30,7 +31,7 @@ impl IActivity for WelcomeActivity {
         EXECUTOR.spawn(async move {
             time::sleep(Duration::from_millis(2500)).await;
             debug!("navigate to password");
-            start_act(ActName::new("password")).unwrap();
+            start_activity(ActName::new(PASSWORD)).unwrap();
         });
     }
 

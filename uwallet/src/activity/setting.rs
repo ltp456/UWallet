@@ -4,25 +4,23 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
-
 use log::debug;
 use tokio::time;
 
 use coreui::{
-    executor::{Executor, EXECUTOR},
-    lifecycle::ActName,
-    state::AppState,
-    IActivity,
-    egui,
-    IView,
     eframe,
+    egui,
+    executor::{Executor, EXECUTOR},
+    IActivity,
+    IView,
+    lifecycle::{ActName, start_activity},
+    state::AppState,
 };
-use coreui::lifecycle::start_act;
 
-use crate::view::{common, state};
-use crate::view::state::{BottomStatusBar, ViewStatus};
-
-
+use crate::{
+    constants::{*},
+    view::{common,state, state::{BottomStatusBar, DataModel, ViewStatus}},
+};
 
 pub struct SettingActivity {
     balance: String,
@@ -36,7 +34,7 @@ pub struct SettingActivity {
 }
 
 impl SettingActivity {
-    pub fn new(ctx:egui::Context) -> SettingActivity {
+    pub fn new(ctx: egui::Context) -> SettingActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
             balance: "11231231231231231".to_string(),
@@ -50,21 +48,21 @@ impl SettingActivity {
     }
 
     pub fn navigate(&mut self, key: ActName) {
-      start_act(key).unwrap();
+        start_activity(key).unwrap();
     }
 }
 
 impl IActivity for SettingActivity {
-    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
         self.hit_info = "".to_string();
     }
 
-    fn on_pause(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
         self.bottom_status_bar.stop();
     }
@@ -72,11 +70,11 @@ impl IActivity for SettingActivity {
     fn set_view(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame, state: &AppState) {
         let (home, transfer, setting) = common::left_menu(ctx);
         if home {
-            self.navigate(ActName::new("home"));
+            self.navigate(ActName::new(HOME));
         } else if transfer {
-            self.navigate(ActName::new("transfer"));
+            self.navigate(ActName::new(TRANSFER));
         } else if setting {
-            self.navigate(ActName::new("setting"));
+            self.navigate(ActName::new(SETTING));
         }
         egui::CentralPanel::default().show(ctx, |ui| {
             if let Ok(mut data) = self.status_receiver.try_recv() {
