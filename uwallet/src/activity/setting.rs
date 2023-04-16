@@ -37,7 +37,7 @@ impl SettingActivity {
     pub fn new(ctx: egui::Context) -> SettingActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
-            balance: "11231231231231231".to_string(),
+            balance: "0.00".to_string(),
             endpoint: "".to_string(),
             status_sender: sender,
             status_receiver: receiver,

@@ -40,8 +40,8 @@ impl TransferActivity {
         let (status_sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
             client,
-            amount: "1234567891".to_string(),
-            dest_address: "14dp76EwTctDZmX8bgJV3jC6KsnCCpjwzvjMpm4tc2AkJN2L".to_string(),
+            amount: "".to_string(),
+            dest_address: "".to_string(),
             status_sender,
             status_receiver: receiver,
             bottom_status_bar: BottomStatusBar::new(ctx),
@@ -51,6 +51,10 @@ impl TransferActivity {
     }
 
     pub fn transfer(&mut self, ctx: &egui::Context, state: &AppState) {
+        if self.amount == "" || self.dest_address == "" {
+            return;
+        }
+
         let mut from = String::new();
         let mut seed = String::new();
         if let Some(phrase) = state.get_value(PHRASE_KEY) {

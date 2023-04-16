@@ -59,7 +59,7 @@ struct Secret {
 }
 
 
-pub fn simple_encode(data: &[u8], key: &[u8]) -> Result<String> {
+pub fn wrapp_encode(data: &[u8], key: &[u8]) -> Result<String> {
     let key = generate_key(key).unwrap();
     let key = GenericArray::from_slice(&key);
     let nonce = Aes256GcmSiv::generate_nonce(rand::thread_rng());
@@ -76,7 +76,7 @@ pub fn simple_encode(data: &[u8], key: &[u8]) -> Result<String> {
 }
 
 
-pub fn simple_decode(data: &[u8], key: &[u8]) -> Result<Vec<u8>> {
+pub fn wrapp_decode(data: &[u8], key: &[u8]) -> Result<Vec<u8>> {
     let key = generate_key(key).unwrap();
     let secret: Secret = serde_json::from_slice(data).unwrap();
     let nonce = GenericArray::from_slice(&secret.nonce);
@@ -104,9 +104,9 @@ mod test {
     fn test_simple() {
         let key = generate_key("nihao".as_bytes()).unwrap();
         let data = "i love you".as_bytes();
-        let encode = simple_encode(data, &key).unwrap();
+        let encode = wrapp_encode(data, &key).unwrap();
         println!("{}", encode);
-        let decode = simple_decode(encode.as_bytes(), &key).unwrap();
+        let decode = wrapp_decode(encode.as_bytes(), &key).unwrap();
         println!("{:?}", String::from_utf8(decode))
     }
 

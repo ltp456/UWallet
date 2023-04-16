@@ -29,20 +29,23 @@ pub struct PasswordActivity {
 impl PasswordActivity {
     pub fn new() -> PasswordActivity {
         Self {
-            password: "abcd".to_string(),
-            confirm_pwd: "abcd".to_string(),
+            password: "".to_string(),
+            confirm_pwd: "".to_string(),
             pwd_error: false,
             new_password: true,
         }
     }
 
     fn check_password(&self, state: &AppState) -> Result<String> {
+        if self.password == "" {
+            return Err(anyhow!("password is empty"));
+        }
         let data = state.get_encode_data().unwrap();
-        if let Ok(decode_data) = utils::aes::simple_decode(data.as_bytes(), self.password.as_bytes()) {
+        return if let Ok(decode_data) = utils::aes::wrapp_decode(data.as_bytes(), self.password.as_bytes()) {
             state.init_data(&decode_data);
-            return Ok("ok".to_owned());
+            Ok("ok".to_owned())
         } else {
-            return Err(anyhow!(""));
+            Err(anyhow!("password is error"))
         }
     }
 

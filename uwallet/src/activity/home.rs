@@ -44,8 +44,8 @@ impl HomeActivity {
     pub fn new(ctx: egui::Context, client: Arc<Client>) -> HomeActivity {
         let (sender, receiver) = std::sync::mpsc::channel::<ViewStatus>();
         Self {
-            balance: "0.0".to_string(),
-            address: "15QFBQY6TF6Abr6vA1r6opRh6RbRSMWgBC1PcCMDDzRSEXf5".to_string(),
+            balance: "0.00".to_string(),
+            address: "test".to_string(),
             nonce: "0".to_string(),
             bottom_status_bar: BottomStatusBar::new(ctx.clone()),
             view_status_sender: sender,

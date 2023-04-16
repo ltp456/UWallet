@@ -79,7 +79,7 @@ impl WalletApp {
         let map = self.app.state.get_data().unwrap();
         let pwd = self.app.state.get_value(PWD_KEY).unwrap();
         let data = serde_json::to_string(&map).map_err(|e| { anyhow!("{}",e) })?;
-        let result = utils::aes::simple_encode(data.as_bytes(), pwd.as_bytes()).unwrap();
+        let result = utils::aes::wrapp_encode(data.as_bytes(), pwd.as_bytes()).unwrap();
         Ok(result)
     }
 }
