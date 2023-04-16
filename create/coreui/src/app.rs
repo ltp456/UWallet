@@ -31,6 +31,7 @@ impl App {
         }
     }
 
+
     pub fn register(&mut self, activity_key: &ActName, activity: impl IActivity + 'static) {
         self.lifecycle_manager.register(activity_key).unwrap();
         self.activities.insert(activity_key.clone(), Box::new(activity));

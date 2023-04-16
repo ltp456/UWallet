@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{Receiver, Sender};
 
+use anyhow::{anyhow, Result};
 use log::{debug, error, info};
 
 use coreui::{
@@ -19,6 +20,7 @@ use crate::{activity::{
     transfer::TransferActivity,
     welcome::WelcomeActivity,
 }};
+use crate::activity::constants::PWD;
 
 mod activity;
 mod view;
@@ -42,7 +44,8 @@ impl eframe::App for WalletApp {
     /// Called by the frame work to save state before shutdown.
     fn save(&mut self, storage: &mut dyn eframe::Storage) {
         debug!("app shutdown now");
-        eframe::set_value(storage, eframe::APP_KEY, &self.app.state.0);
+        let encode_data = self.encrypt().unwrap();
+        eframe::set_value(storage, eframe::APP_KEY, &encode_data);
     }
 }
 
@@ -52,10 +55,9 @@ impl WalletApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         //https://rpc.polkadot.io
         let client = Arc::new(polkadot::client::Client::new(String::from("http://127.0.0.1:9933")));
-        let executor = Arc::new(Executor::new());
         let mut app_state = AppState::new();
         if let Some(storage) = cc.storage {
-            app_state = AppState(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
+            app_state.load_data(eframe::get_value(storage, eframe::APP_KEY).unwrap_or_default());
         }
         let mut app = coreui::app::App::new(cc.egui_ctx.clone(), app_state);
         app.boot_act(&ActName::new("welcome"), WelcomeActivity::new());
@@ -68,6 +70,14 @@ impl WalletApp {
         Self {
             app
         }
+    }
+
+    pub fn encrypt(&self) -> Result<String> {
+        let map = self.app.state.get_data().unwrap();
+        let pwd = self.app.state.get_value(PWD).unwrap();
+        let data = serde_json::to_string(&map).map_err(|e| { anyhow!("{}",e) })?;
+        let result = utils::aes::simple_encode(data.as_bytes(), pwd.as_bytes()).unwrap();
+        Ok(result)
     }
 }
 

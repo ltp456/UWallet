@@ -1,19 +1,22 @@
 use std::sync::mpsc::Sender;
+
 use anyhow::{anyhow, Result};
 use log::debug;
+
 use coreui::{
-    executor::{Executor, EXECUTOR},
-    lifecycle::ActName,
-    state::AppState,
-    IActivity,
-    egui,
-    IView,
     eframe,
+    egui,
+    executor::{Executor, EXECUTOR},
+    IActivity,
+    IView,
+    lifecycle::{ActName, start_act},
+    state::AppState,
 };
-use coreui::lifecycle::start_act;
-use crate::{view::{common,state}};
 
-
+use crate::{
+    activity::{constants::{*}},
+    view::{common, state},
+};
 
 pub struct PasswordActivity {
     password: String,
@@ -24,7 +27,7 @@ pub struct PasswordActivity {
 }
 
 impl PasswordActivity {
-    pub fn new( ) -> PasswordActivity {
+    pub fn new() -> PasswordActivity {
         Self {
             password: "abcd".to_string(),
             confirm_pwd: "abcd".to_string(),
@@ -34,25 +37,31 @@ impl PasswordActivity {
     }
 
     fn check_password(&self, state: &AppState) -> Result<String> {
-        if let Some(password) = state.get_value("PWD") {
-            if self.password == password {
-                return Ok("Ok".to_string());
-            }
+        let data = state.get_encode_data().unwrap();
+        if let Ok(decode_data) = utils::aes::simple_decode(data.as_bytes(), self.password.as_bytes()) {
+            state.init_data(&decode_data);
+            return Ok("ok".to_owned());
         }
-        return Err(anyhow!("password not match"));
+        return Err(anyhow!(""));
     }
+
+
+    fn get_pwd_hash(&self) -> Result<String> {
+        utils::sha256(self.password.as_bytes())
+    }
+
 
     fn set_new_password(&self, state: &AppState) -> Result<String> {
         if self.password != self.confirm_pwd || self.password == "" {
             return Err(anyhow!("password not match"));
         }
-        state.set_value("PWD".to_owned(), self.password.clone());
+        state.set_value(PWD, &self.password);
         return Ok("Ok".to_string());
     }
 
     fn navigate_phrase(&self, state: &AppState) {
-        if state.exists("PHRASE") {
-            start_act(ActName::new("home")).unwrap();;
+        if state.exists(PHRASE) {
+            start_act(ActName::new("home")).unwrap();
         } else {
             start_act(ActName::new("phrase")).unwrap();
         }
@@ -133,8 +142,8 @@ impl PasswordActivity {
 
 
 impl IActivity for PasswordActivity {
-    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
-        if state.exists("PWD") {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
+        if state.pwd_exists() {
             self.new_password = false;
         } else {
             self.new_password = true;
@@ -142,11 +151,11 @@ impl IActivity for PasswordActivity {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self, ctx: &egui::Context,state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
     }
 

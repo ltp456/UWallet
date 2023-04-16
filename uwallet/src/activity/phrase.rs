@@ -4,21 +4,26 @@ use std::time::Duration;
 
 use anyhow::Result;
 use bip39::{Language, Mnemonic, MnemonicType};
-
 use log::debug;
 use tokio::time;
+
 use coreui::{
+    eframe,
+    egui,
     executor::{Executor, EXECUTOR},
+    IActivity,
+    IView,
     lifecycle::ActName,
     state::AppState,
-    IActivity,
-    egui,
-    IView,
-    eframe,
 };
 use coreui::lifecycle::start_act;
+use utils::aes_gcm_siv::{AeadCore, Nonce};
+use utils::rand;
 
-use crate::view::{common, state};
+use crate::{
+    activity::{constants::{*}},
+    view::{common, state},
+};
 
 
 
@@ -39,25 +44,26 @@ impl PhraseActivity {
         self.phrase = mnemonic.phrase().to_string();
     }
 
+
     pub fn confirm_phrase(&mut self, state: &AppState) {
         if self.phrase == "" {
             return;
         }
-        state.set_value("PHRASE".to_owned(), self.phrase.clone());
+        state.set_value(PHRASE, &self.phrase);
         start_act(ActName::new("home")).unwrap();
     }
 }
 
 impl IActivity for PhraseActivity {
-    fn on_create(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_create(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_create");
     }
 
-    fn on_resume(&mut self,ctx: &egui::Context, state: &AppState) {
+    fn on_resume(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_resume");
     }
 
-    fn on_pause(&mut self, ctx: &egui::Context,state: &AppState) {
+    fn on_pause(&mut self, ctx: &egui::Context, state: &AppState) {
         debug!("on_pause");
     }
 
